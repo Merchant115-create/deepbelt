@@ -1,0 +1,1488 @@
+<title>Deepbelt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: one wide factory floor that stays pinned at the top, with the catalogue and rebirth panel beside it (below it on phones). */
+:root {
+  --bg: #d9dedb;
+  --panel: #e9edeb;
+  --panel-2: #f4f6f5;
+  --ink: #17201e;
+  --ink-2: #4a5855;
+  --line: #b4bfbb;
+  --accent: #e0560f;
+  --accent-ink: #ffffff;
+  --money: #0b7a64;
+  --bad: #b3261e;
+  --floor: #cdd5d2;
+  --fog: #b3bdb9;
+  --grid: #bac4c0;
+  --belt: #3a4644;
+  --belt-mark: #8fa09b;
+  --r-common: #5b6b67;
+  --r-uncommon: #23803f;
+  --r-rare: #2b6fd6;
+  --r-epic: #8a3fd1;
+  --r-legendary: #a25f00;
+  --r-mythic: #d1245f;
+  --r-ascended: #0a8aa6;
+  --r-divine: #5f8a00;
+  --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111817; --panel: #192220; --panel-2: #1f2a28; --ink: #dde7e4; --ink-2: #9fb0ab; --line: #2d3b38;
+    --accent: #ff8a3d; --accent-ink: #1a0e05; --money: #4fd1b5; --bad: #ff7a70;
+    --floor: #0e1413; --fog: #080c0b; --grid: #1a2523; --belt: #2a3634; --belt-mark: #5d726d;
+    --r-common: #9fb0ab; --r-uncommon: #5fd48a; --r-rare: #6aa5ff; --r-epic: #c28aff; --r-legendary: #ffc247; --r-mythic: #ff5c8a; --r-ascended: #5fe3ff; --r-divine: #c6ef4d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111817; --panel: #192220; --panel-2: #1f2a28; --ink: #dde7e4; --ink-2: #9fb0ab; --line: #2d3b38;
+  --accent: #ff8a3d; --accent-ink: #1a0e05; --money: #4fd1b5; --bad: #ff7a70;
+  --floor: #0e1413; --fog: #080c0b; --grid: #1a2523; --belt: #2a3634; --belt-mark: #5d726d;
+  --r-common: #9fb0ab; --r-uncommon: #5fd48a; --r-rare: #6aa5ff; --r-epic: #c28aff; --r-legendary: #ffc247; --r-mythic: #ff5c8a; --r-ascended: #5fe3ff; --r-divine: #c6ef4d;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.4; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+* { box-sizing: border-box; }
+.app {
+  max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 28px; }
+.brand h1 { margin: 0; font: 800 44px/0.9 var(--font-display); letter-spacing: 0.03em; text-transform: uppercase; }
+.brand small { display: block; margin-top: 4px; color: var(--ink-2); font-size: 12px; letter-spacing: 0.04em; }
+.stat { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.stat .label { font: 600 11px/1 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.stat .val { font: 600 22px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.stat.cash .val { font-size: 32px; color: var(--money); min-width: 8ch; }
+.stat .val.low { color: var(--bad); }
+.brand .stat.cores { margin-top: 8px; flex-direction: row; align-items: baseline; gap: 10px; }
+.brand .stat.cores .val { font-size: 18px; }
+/* The header row must never change size. Stats that change text get a fixed width and clip instead of growing,
+   because a wider Power label used to push a stat onto a second line and shift the whole page. */
+.stat.inc { width: 150px; }
+.stat.land { width: 190px; }
+.stat.pow { width: min(100%, 360px); }
+.stat.pow .label, .stat.pow .val, .stat.inc .val, .stat.land .val, .stat.land .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (min-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr) 340px; } }
+.stage { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 4px 8px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+#c { display: block; width: 100%; aspect-ratio: 22 / 14; max-width: 100%; background: var(--floor); border: 1px solid var(--line); border-radius: 6px; touch-action: none; cursor: crosshair; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.btn { font: 600 13px/1 var(--font-body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; cursor: pointer; }
+.btn:hover:not(:disabled) { border-color: var(--ink-2); }
+.btn[aria-pressed="true"], .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible, .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#hint { flex: 1 1 200px; min-width: 0; color: var(--ink-2); font-size: 13px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rebirth { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--line); border-radius: 6px; }
+.rebirth .line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.rebirth .line b { font: 600 13px var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.rebirth p, .foot p { margin: 0; font-size: 12px; color: var(--ink-2); }
+/* Shop groups are native <details> dropdowns, so they work with touch, mouse and keyboard on every platform.
+   The summary is a full-width bar at least 44px tall, which is the smallest comfortable touch target. */
+#shop { display: flex; flex-direction: column; gap: 8px; }
+.gtools { display: flex; gap: 8px; }
+.btn.mini { padding: 6px 10px; font-size: 12px; }
+.grp { border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); min-width: 0; }
+.grp[open] { background: transparent; }
+.gh { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; cursor: pointer; list-style: none; user-select: none;
+  font: 600 12px/1 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); border-radius: 8px; }
+.gh::-webkit-details-marker { display: none; }
+.gh:hover { color: var(--ink); }
+.gh:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gh .gname { flex: 1 1 auto; min-width: 0; }
+.gh .gcount { font: 600 11px var(--font-mono); letter-spacing: 0; padding: 2px 7px; border: 1px solid var(--line); border-radius: 99px; }
+.gh .chev { width: 8px; height: 8px; flex: none; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s; }
+.grp[open] > .gh .chev { transform: rotate(45deg); }
+.grp > .list { padding: 0 8px 8px; }
+@media (prefers-reduced-motion: reduce) { .gh .chev { transition: none; } }
+.gh.core { color: var(--accent); }
+.gh.asc { color: var(--r-ascended); }
+.gnote { margin: 0; font-size: 12px; color: var(--ink-2); }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 6px 10px 6px 6px; background: var(--panel-2); color: var(--ink); border: 1px solid transparent; border-radius: 6px; cursor: pointer; font: inherit; }
+.row:hover { border-color: var(--line); }
+.row { box-shadow: inset 3px 0 0 var(--rc, transparent); }
+.row.sel { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--rc, transparent), 0 0 0 1px var(--accent); }
+.tag { margin-left: 8px; font: 600 10px/1 var(--font-body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--rc, var(--ink-2)); }
+.row.poor { opacity: 0.55; }
+.row canvas { width: 44px; height: 44px; background: var(--floor); border-radius: 4px; display: block; }
+.rn { display: block; font-weight: 600; font-size: 14px; }
+.rs { display: block; font-size: 12px; color: var(--ink-2); }
+.rc { font: 600 13px var(--font-mono); color: var(--money); font-variant-numeric: tabular-nums; text-align: right; }
+.rc.locked { color: var(--accent); }
+.foot { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1>Deepbelt</h1>
+      <small>Drill it, upgrade it, smelt it.</small>
+      <div class="stat cores"><span class="label">Cores</span><span class="val" id="cores">0</span></div>
+    </div>
+    <div class="stat cash"><span class="label">Cash</span><span class="val" id="cash">$0</span></div>
+    <div class="stat inc"><span class="label">Income</span><span class="val" id="inc">$0/s</span></div>
+    <div class="stat land"><span class="label" id="landLabel">Land</span><span class="val" id="land">21 tiles</span></div>
+    <div class="stat pow"><span class="label" id="powLabel">Power</span><span class="val" id="pow">100 / 100</span></div>
+  </header>
+  <main class="layout">
+    <section class="stage" aria-label="Factory floor">
+      <canvas id="c" aria-label="Factory floor grid"></canvas>
+      <div class="toolbar">
+        <button class="btn" id="btnRot" type="button">Rotate (R)</button>
+        <button class="btn" id="btnLand" type="button" aria-pressed="false">Buy land (L)</button>
+        <button class="btn" id="btnErase" type="button" aria-pressed="false">Remove (X)</button>
+        <button class="btn" id="btnDesel" type="button">Deselect (Esc)</button>
+        <div id="hint"></div>
+      </div>
+    </section>
+    <aside class="panel" aria-label="Catalogue">
+      <div class="rebirth">
+        <div class="line"><span>Life</span><b id="life">1 of 10</b></div>
+        <div class="line"><span>Next rebirth needs</span><b id="need">$50Qa</b></div>
+        <div class="line"><span>Earned this run</span><b id="run">$0</b></div>
+        <div class="line"><span>Cores if you rebirth</span><b id="gain">0</b></div>
+        <div class="line"><span>Cores to spend</span><b id="spend">0</b></div>
+        <button class="btn primary" id="btnRebirth" type="button">Rebirth</button>
+        <p>You get 10 rebirths, and each one needs 10 times more than the last. Each also gives you one Ascended item and one new square to place it on. Rebirth clears your cash, floor and land. Each rebirth also gives you exactly 1 core, which you can spend on Core tech below.</p>
+      </div>
+      <div id="shop"></div>
+      <div class="foot">
+        <button class="btn" id="btnReset" type="button">Reset save</button>
+        <p>Progress saves in this browser.</p>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var COLS = 22, ROWS = 14, N = COLS * ROWS, CAP = 320;
+  var DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  var MONO = "'IBM Plex Mono', ui-monospace, monospace";
+  var SAVE_KEY = 'deepbelt-save-v1';
+  var PLOT = { x0: 7, x1: 13, y0: 5, y1: 7 };
+  var START_TILES = (PLOT.x1 - PLOT.x0 + 1) * (PLOT.y1 - PLOT.y0 + 1);
+  var LAND_BASE = 500, LAND_GROWTH = 1.06;
+  var REBIRTH_BASE = 50000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 10, BASE_CAP = 100, BREAK_AFTER = 8;
+
+  /* Footprints. Each is a list of [dx, dy] tile offsets seen from the item's own point of view while it faces right (direction 0).
+     [0, 0] is always the "head" tile: the one that carries the picture, and for drills the one ore leaves from.
+     Turning the item rotates every offset, so the whole shape swings around its head. */
+  var SH = {
+    long2: [[0, 0], [-1, 0]],
+    long3: [[0, 0], [-1, 0], [-2, 0]],
+    wide2: [[0, 0], [0, 1]],
+    ahead2: [[0, 0], [1, 0]],
+    line3: [[0, 0], [1, 0], [2, 0]],
+    elbow: [[0, 0], [-1, 0], [-1, 1]],
+    tee: [[0, 0], [-1, 0], [-1, 1], [-1, -1]],
+    block: [[0, 0], [-1, 0], [0, 1], [-1, 1]],
+    block2: [[0, 0], [1, 0], [0, 1], [1, 1]],
+    arrow: [[0, 0], [-1, 0], [-2, 0], [-1, 1], [-1, -1]],
+    plus: [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]],
+    wide3: [[0, 0], [0, 1], [0, -1]]
+  };
+
+  /* Ore status effects. An ore carries at most one (`ore.fx`), and the last effect it touched wins.
+     Effect belts and upgraders set it. Some furnaces pay extra for a matching effect (see `fxBonus`). */
+  var FX = {
+    fire: { name: 'Burning', color: '#ff6a2b', ttl: 6 },
+    frost: { name: 'Frozen', color: '#7fd8ff', ttl: 10 },
+    shock: { name: 'Charged', color: '#ffe14a', ttl: 4 },
+    gold: { name: 'Gilded', color: '#f5c542' }
+  };
+  /* `ttl` is how many seconds an effect lasts after the ore last touched whatever made it (no ttl = permanent).
+     An effect belt refreshes the timer on every frame the ore is on it, so the clock only starts when the ore leaves. */
+  function setFx(o, key) { o.fx = key; o.fxT = FX[key].ttl || Infinity; }
+  function fxNote(key) { return FX[key].name + (FX[key].ttl ? ' for ' + FX[key].ttl + 's' : ''); }
+
+  var ITEMS = [
+    { id: 'belt0', kind: 'belt', name: 'Belt', cost: 3, speed: 2, color: '#3a4644' },
+    { id: 'belt1', kind: 'belt', name: 'Fast belt', cost: 40, speed: 4, color: '#3a4644' },
+    { id: 'bend', kind: 'bend', name: 'Corner belt', cost: 5, speed: 2, color: '#3a4644' },
+
+    { id: 'drill0', kind: 'drill', name: 'Rust drill', cost: 25, value: 1, interval: 1.6, color: '#b5532b' },
+    { id: 'drill1', kind: 'drill', name: 'Tin drill', cost: 180, value: 4, interval: 1.4, color: '#7f9aa6' },
+    { id: 'drill2', kind: 'drill', name: 'Silver drill', cost: 1200, value: 18, interval: 1.2, color: '#b9c4cb' },
+    { id: 'drill3', kind: 'drill', name: 'Cobalt drill', cost: 9000, value: 90, interval: 1.1, color: '#3b6fd1' },
+    { id: 'drill4', kind: 'drill', name: 'Quartz drill', cost: 75000, value: 450, interval: 1.0, color: '#a77be8' },
+    { id: 'drill5', kind: 'drill', name: 'Garnet drill', cost: 600000, value: 2200, interval: 0.95, color: '#a8283c' },
+    { id: 'drill6', kind: 'drill', name: 'Topaz drill', cost: 5000000, value: 11000, interval: 0.9, color: '#d9a21b' },
+    { id: 'drill7', kind: 'drill', name: 'Sapphire drill', cost: 45000000, value: 55000, interval: 0.85, color: '#2557c9' },
+    { id: 'drill8', kind: 'drill', name: 'Emerald drill', cost: 400000000, value: 280000, interval: 0.8, color: '#1f9e5a' },
+    { id: 'drill9', kind: 'drill', name: 'Obsidian drill', cost: 4000000000, value: 1400000, interval: 0.75, color: '#2d2740' },
+    { id: 'drill10', kind: 'drill', name: 'Diamond drill', cost: 40000000000, value: 7000000, interval: 0.7, color: '#7fd6e8' },
+    { id: 'drill11', kind: 'drill', name: 'Opal auger', cost: 4e11, value: 35000000, interval: 0.65, color: '#9fd8cf', shape: SH.long2 },
+    { id: 'drill12', kind: 'drill', name: 'Alexandrite lance', cost: 4e12, value: 175000000, interval: 0.6, color: '#c24fd6', shape: SH.elbow },
+    { id: 'drill13', kind: 'drill', name: 'Painite trident', cost: 4e13, value: 875000000, interval: 0.55, color: '#e2552a', shape: SH.tee },
+    { id: 'drill14', kind: 'drill', name: 'Starfall excavator', cost: 4e14, value: 4400000000, interval: 0.5, color: '#f2c94c', shape: SH.block },
+    { id: 'drill15', kind: 'drill', name: 'Worldeater', cost: 4e15, value: 22000000000, interval: 0.45, color: '#7c4dff', shape: SH.arrow },
+
+    { id: 'coal0', kind: 'drill', coal: true, name: 'Coal drill', cost: 150, value: 2, interval: 1.2, color: '#3a3f41' },
+    { id: 'coal1', kind: 'drill', coal: true, name: 'Coal rig', cost: 15000, value: 14, interval: 1.0, color: '#2f3436' },
+    { id: 'coal2', kind: 'drill', coal: true, name: 'Coal engine', cost: 2000000, value: 100, interval: 0.9, color: '#252a2c' },
+    { id: 'coal3', kind: 'drill', coal: true, name: 'Anthracite rig', cost: 1.5e9, value: 800, interval: 0.8, color: '#1f2426', shape: SH.long2 },
+    { id: 'coal4', kind: 'drill', coal: true, name: 'Black seam engine', cost: 2e11, value: 6000, interval: 0.7, color: '#171b1d', shape: SH.block },
+    { id: 'conv0', kind: 'conv', name: 'Life force converter', cost: 400, rate: 1, color: '#e0a030' },
+    { id: 'bat0', kind: 'bat', name: 'Battery', cost: 800, cap: 500, color: '#46c37b' },
+    { id: 'conv1', kind: 'conv', name: 'Tesla coil', cost: 5e6, rate: 2, color: '#f0b429', shape: SH.ahead2 },
+    { id: 'bat1', kind: 'bat', name: 'Capacitor bank', cost: 60000, cap: 6000, color: '#46c37b', shape: SH.wide2 },
+    { id: 'bat2', kind: 'bat', name: 'Grid vault', cost: 2e7, cap: 80000, color: '#46c37b', shape: SH.block2 },
+
+    { id: 'up0', kind: 'up', name: 'Wash basin', cost: 60, mult: 1.5, color: '#2e9ec4' },
+    { id: 'up1', kind: 'up', name: 'Crusher', cost: 400, mult: 2, color: '#d19a1f' },
+    { id: 'up2', kind: 'up', name: 'Magnet coil', cost: 4000, mult: 3, color: '#d1483a' },
+    { id: 'up3', kind: 'up', name: 'Resonator', cost: 40000, mult: 3.75, color: '#8a5ad6' },
+    { id: 'up4', kind: 'up', name: 'Prism press', cost: 400000, mult: 4, color: '#1fb48f' },
+    { id: 'up5', kind: 'up', name: 'Plasma lathe', cost: 4000000, mult: 5, color: '#e0489a' },
+    { id: 'up6', kind: 'up', name: 'Void loom', cost: 40000000, mult: 6, color: '#5b4bd6' },
+    { id: 'up7', kind: 'up', name: 'Chrono vat', cost: 400000000, mult: 7, color: '#3aa7a0' },
+    { id: 'up8', kind: 'up', name: 'Star anvil', cost: 4000000000, mult: 10, color: '#e08a1f' },
+    { id: 'up9', kind: 'up', name: 'Nebula press', cost: 4e10, mult: 12, color: '#4fa3d1', shape: SH.long2 },
+    { id: 'up10', kind: 'up', name: 'Tesseract loom', cost: 4e11, mult: 15, color: '#7a6bff', shape: SH.long3 },
+    { id: 'up11', kind: 'up', name: 'Event coil', cost: 4e12, mult: 20, color: '#ff6b6b', shape: SH.wide2 },
+    { id: 'up12', kind: 'up', name: 'Cosmic lens', cost: 4e13, mult: 25, color: '#34d1b0', shape: SH.block },
+    { id: 'up13', kind: 'up', name: 'Omega engine', cost: 4e14, mult: 35, color: '#ffb347', shape: SH.tee },
+
+    { id: 'fur0', kind: 'fur', name: 'Kiln', cost: 10, mult: 1, color: '#c8773a' },
+    { id: 'fur1', kind: 'fur', name: 'Forge', cost: 2500, mult: 2, color: '#e0561f' },
+    { id: 'fur2', kind: 'fur', name: 'Foundry', cost: 60000, mult: 4, color: '#e8a21a' },
+    { id: 'fur3', kind: 'fur', name: 'Reactor', cost: 1500000, mult: 8, color: '#4fe0c0' },
+    { id: 'fur4', kind: 'fur', name: 'Stellar kiln', cost: 40000000, mult: 16, color: '#f0c94a' },
+    { id: 'fur5', kind: 'fur', name: 'Nova furnace', cost: 1000000000, mult: 32, color: '#9ad7ff' },
+    { id: 'fur6', kind: 'fur', name: 'Pulsar oven', cost: 3e10, mult: 80, color: '#ffd36b', shape: SH.ahead2 },
+    { id: 'fur7', kind: 'fur', name: 'Quasar kiln', cost: 8e11, mult: 110, color: '#ff7ab6', shape: SH.elbow },
+    { id: 'fur8', kind: 'fur', name: 'Magnetar forge', cost: 2e13, mult: 150, color: '#6bd1ff', shape: SH.line3 },
+    { id: 'fur9', kind: 'fur', name: 'Eventide foundry', cost: 5e14, mult: 210, color: '#b48cff', shape: SH.block2 },
+    { id: 'fur10', kind: 'fur', name: 'Genesis crucible', cost: 1.2e16, mult: 300, color: '#fff2a8', shape: SH.plus },
+
+    { id: 'cbelt', kind: 'belt', core: 1, name: 'Hyperbelt', cost: 500, speed: 8, color: '#3a4644' },
+    { id: 'csplit', kind: 'split', core: 1, name: 'Splitter', cost: 5000, speed: 2, color: '#3a4644' },
+    { id: 'cdup', kind: 'dup', core: 2, name: 'Mirror', cost: 250000, color: '#6fa8dc' },
+    { id: 'cfur', kind: 'fur', core: 3, name: 'Void furnace', cost: 6000000000, mult: 64, color: '#b06cff' },
+    { id: 'cdrill', kind: 'drill', core: 4, name: 'Singularity drill', cost: 300000000000, value: 60000000, interval: 0.5, color: '#ff4f8b' },
+    { id: 'cconv', kind: 'conv', core: 2, name: 'Soul converter', cost: 50000, rate: 3, color: '#b06cff' },
+
+    /* Core tech, second wave. Effects set a status on the ore, and the furnaces below pay extra when it matches. */
+    { id: 'cember', kind: 'belt', core: 1, name: 'Ember belt', cost: 4000, speed: 2, fx: 'fire', color: '#ff6a2b' },
+    { id: 'cfrost', kind: 'belt', core: 1, name: 'Frost belt', cost: 4000, speed: 2, fx: 'frost', color: '#7fd8ff' },
+    { id: 'clight', kind: 'belt', core: 1, name: 'Lightspeed belt', cost: 60000, speed: 20, color: '#3a4644' },
+    { id: 'ctele0', kind: 'tele', core: 1, name: 'Warp pad', cost: 50000, color: '#5ab0ff' },
+    { id: 'ctele1', kind: 'tele', core: 1, name: 'Wide gate', cost: 8e8, color: '#ffa24a', shape: SH.wide3 },
+    { id: 'ctele2', kind: 'tele', core: 2, name: 'Rift', cost: 4e10, mult: 2, color: '#b06cff', shape: SH.block },
+    { id: 'cflare', kind: 'up', core: 1, name: 'Flare chamber', cost: 3e11, mult: 4, fx: 'fire', color: '#ff6a2b', shape: SH.long2 },
+    { id: 'ccryo', kind: 'up', core: 1, name: 'Cryo jet', cost: 3e11, mult: 4, fx: 'frost', color: '#7fd8ff', shape: SH.wide2 },
+    { id: 'carc', kind: 'up', core: 1, name: 'Arc coil', cost: 3e11, mult: 4, fx: 'shock', color: '#ffe14a', shape: SH.tee },
+    { id: 'cmidas', kind: 'up', core: 2, name: 'Midas bath', cost: 2e12, mult: 8, fx: 'gold', color: '#f5c542', shape: SH.block },
+    { id: 'creson', kind: 'up', core: 1, name: 'Resonance tank', cost: 1e12, mult: 1, fxMult: 12, color: '#c9d6ff', shape: SH.long3 },
+    { id: 'csub', kind: 'fur', core: 2, name: 'Subzero furnace', cost: 5e11, mult: 40, likes: 'frost', fxBonus: { frost: 10, fire: 0.5 }, color: '#7fd8ff', shape: SH.block2 },
+    { id: 'cblast', kind: 'fur', core: 2, name: 'Blast furnace', cost: 5e11, mult: 40, likes: 'fire', fxBonus: { fire: 10, frost: 0.5 }, color: '#ff6a2b', shape: SH.elbow },
+    { id: 'cstorm', kind: 'fur', core: 2, name: 'Storm furnace', cost: 5e11, mult: 40, likes: 'shock', fxBonus: { shock: 10 }, color: '#ffe14a', shape: SH.line3 },
+    { id: 'cvault', kind: 'fur', core: 3, name: 'Gilded vault', cost: 3e12, mult: 50, likes: 'gold', fxBonus: { gold: 10 }, color: '#f5c542', shape: SH.plus },
+
+    /* Ascended: free rewards. `grant` is the rebirth number that gives each one. */
+    { id: 'asc_d1', kind: 'drill', asc: true, grant: 1, name: 'Aether drill', cost: 0, value: 250000000, interval: 0.5, color: '#22c3d6' },
+    { id: 'asc_u1', kind: 'up', asc: true, grant: 2, name: 'Aether loom', cost: 0, mult: 200, color: '#22c3d6' },
+    { id: 'asc_f1', kind: 'fur', asc: true, grant: 3, name: 'Aether kiln', cost: 0, mult: 150, color: '#22c3d6' },
+    { id: 'asc_s1', kind: 'split', asc: true, grant: 4, name: 'Prism splitter', cost: 0, mult: 40, speed: 2, color: '#3a4644' },
+    { id: 'asc_d2', kind: 'drill', asc: true, grant: 5, name: 'Zenith drill', cost: 0, value: 2000000000, interval: 0.4, color: '#4aa3ff' },
+    { id: 'asc_u2', kind: 'up', asc: true, grant: 6, name: 'Zenith lens', cost: 0, mult: 500, color: '#4aa3ff' },
+    { id: 'asc_f2', kind: 'fur', asc: true, grant: 7, name: 'Zenith forge', cost: 0, mult: 400, color: '#4aa3ff' },
+    { id: 'asc_d3', kind: 'drill', asc: true, grant: 8, name: 'Apex drill', cost: 0, value: 20000000000, interval: 0.3, color: '#8a7cff' },
+    { id: 'asc_u3', kind: 'up', asc: true, grant: 9, name: 'Apex crown', cost: 0, mult: 1500, color: '#8a7cff' },
+    { id: 'asc_f3', kind: 'fur', asc: true, grant: 10, name: 'Apex crucible', cost: 0, mult: 1000, color: '#8a7cff' }
+  ];
+  var BY_ID = {};
+  ITEMS.forEach(function (d) { BY_ID[d.id] = d; });
+  /* Free starter machines. They are not in the catalogue and only appear at the start of each life. */
+  var HIDDEN = [
+    { id: 'bcoal', kind: 'drill', coal: true, broken: true, name: 'Broken coal drill', cost: 0, value: 2, interval: 2, draw: 0, color: '#3a3f41' },
+    { id: 'bconv', kind: 'conv', broken: true, name: 'Broken converter', cost: 0, rate: 0.5, draw: 0, color: '#e0a030' }
+  ];
+  HIDDEN.forEach(function (d) { BY_ID[d.id] = d; });
+  var GROUPS = [['Belts', 'belt'], ['Drills', 'drill'], ['Power', 'power'], ['Upgraders', 'up'], ['Furnaces', 'fur'], ['Core tech', 'core'], ['Ascended', 'asc']];
+  /* Energy each machine uses per second. Anything not listed is free. */
+  var DRAW = {
+    belt0: 0.02, belt1: 0.04, bend: 0.02, cbelt: 0.1, csplit: 0.05, drill0: 0.2, fur0: 0.1,
+    drill1: 1, drill2: 2, drill3: 4, drill4: 7, drill5: 10, drill6: 16, drill7: 24, drill8: 36, drill9: 56, drill10: 80, cdrill: 160,
+    up1: 0.5, up2: 1, up3: 2, up4: 4, up5: 7, up6: 12, up7: 20, up8: 32, cdup: 3,
+    fur1: 1, fur2: 3, fur3: 6, fur4: 12, fur5: 24, cfur: 40,
+    asc_d1: 200, asc_d2: 500, asc_d3: 1500, asc_u1: 100, asc_u2: 250, asc_u3: 600,
+    asc_f1: 100, asc_f2: 250, asc_f3: 600, asc_s1: 150,
+    drill11: 115, drill12: 165, drill13: 240, drill14: 350, drill15: 500,
+    up9: 50, up10: 80, up11: 120, up12: 180, up13: 260,
+    fur6: 60, fur7: 90, fur8: 130, fur9: 190, fur10: 280,
+    cember: 0.1, cfrost: 0.1, clight: 0.4, ctele0: 10, ctele1: 25, ctele2: 50,
+    cflare: 40, ccryo: 40, carc: 40, cmidas: 100, creson: 70, csub: 60, cblast: 60, cstorm: 60, cvault: 120
+  };
+  ITEMS.forEach(function (d) { d.draw = DRAW[d.id] || 0; });
+
+  /* Rarity is a label for how far up its line an item sits. It doesn't change how the item plays. */
+  var RAR_LABEL = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', mythic: 'Mythic', divine: 'Divine', ascended: 'Ascended' };
+  var RARITY = {
+    drill0: 'common', drill1: 'common', drill2: 'uncommon', drill3: 'uncommon', drill4: 'rare', drill5: 'rare',
+    drill6: 'epic', drill7: 'epic', drill8: 'legendary', drill9: 'legendary', drill10: 'mythic',
+    coal0: 'common', coal1: 'rare', coal2: 'epic', cdrill: 'mythic',
+    drill11: 'mythic', drill12: 'mythic', drill13: 'divine', drill14: 'divine', drill15: 'divine',
+    coal3: 'legendary', coal4: 'mythic', conv1: 'epic', bat1: 'rare', bat2: 'epic',
+    cember: 'rare', cfrost: 'rare', clight: 'epic', ctele0: 'rare', ctele1: 'epic', ctele2: 'legendary',
+    cflare: 'epic', ccryo: 'epic', carc: 'epic', cmidas: 'legendary', creson: 'legendary',
+    csub: 'legendary', cblast: 'legendary', cstorm: 'legendary', cvault: 'mythic',
+    up9: 'mythic', up10: 'mythic', up11: 'divine', up12: 'divine', up13: 'divine',
+    fur6: 'mythic', fur7: 'mythic', fur8: 'divine', fur9: 'divine', fur10: 'divine',
+    up0: 'common', up1: 'common', up2: 'uncommon', up3: 'uncommon', up4: 'rare', up5: 'epic',
+    up6: 'legendary', up7: 'legendary', up8: 'mythic', cdup: 'legendary',
+    fur0: 'common', fur1: 'uncommon', fur2: 'rare', fur3: 'epic', fur4: 'legendary', fur5: 'mythic', cfur: 'mythic',
+    asc_d1: 'ascended', asc_u1: 'ascended', asc_f1: 'ascended', asc_s1: 'ascended', asc_d2: 'ascended',
+    asc_u2: 'ascended', asc_f2: 'ascended', asc_d3: 'ascended', asc_u3: 'ascended', asc_f3: 'ascended'
+  };
+  ITEMS.forEach(function (d) { d.rarity = RARITY[d.id] || null; });
+
+  /* The order rebirth rewards are handed out, read from each item's `grant` number. */
+  var ASC_ORDER = ITEMS.filter(function (d) { return d.asc; })
+    .sort(function (a, b) { return a.grant - b.grant; })
+    .map(function (d) { return d.id; });
+
+  /* A shaped item can be turned even if it is a furnace or battery, because turning swings its footprint. */
+  function directional(def) { return !!def.shape || (def.kind !== 'fur' && def.kind !== 'conv' && def.kind !== 'bat'); }
+  function grp(d) {
+    if (d.asc) return 'asc';
+    if (d.core) return 'core';
+    if (d.kind === 'bend') return 'belt';
+    if (d.coal || d.kind === 'conv' || d.kind === 'bat') return 'power';
+    return d.kind;
+  }
+
+  var SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+  function fmt(n) {
+    if (n < 1000) return n < 10 ? String(Math.round(n * 10) / 10) : String(Math.round(n));
+    var e = Math.min(Math.floor(Math.log10(n) / 3), SUF.length - 1);
+    var v = n / Math.pow(1000, e);
+    return (v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0)) + SUF[e];
+  }
+
+  /* ---------- state ---------- */
+  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [] };
+  var capNow = BASE_CAP, effNow = 1, effRaw = 1, effS = 1, demandNow = 0, outage = 0, brokenCount = 0, weakCount = 0;
+  /* How well a machine runs. Ordinary machines never drop below 30%. Ascended machines drop to 0. */
+  function effOf(def) { return def.draw ? (def.asc ? effRaw : effNow) : 1; }
+  /* The same, for one placed machine. A machine that was just repaired runs at half speed (`weak`) until the power store is full again. */
+  function effCell(c) { return effOf(c.def) * (c.weak ? 0.5 : 1); }
+  var grid = new Array(N).fill(null);
+  var owned = new Array(N).fill(false), ownedCount = 0;
+  var ores = [], floaters = [];
+  var time = 0, inc = 0, earnedAcc = 0;
+  var selected = null, erase = false, landMode = false, dirNew = 0, hover = null;
+
+  function spendable() { return st.cores - st.spent; }
+
+  /* How many machines of one kind are standing on the floor. A big machine counts once, not once per tile. */
+  function placedCount(id) {
+    var n = 0;
+    for (var i = 0; i < N; i++) if (grid[i] && isHead(grid[i], i) && grid[i].def.id === id) n++;
+    return n;
+  }
+  /* How many of an Ascended item you own, minus the ones standing on the floor. */
+  function available(id) { return (st.inv[id] || 0) - placedCount(id); }
+  /* Ordinary upgraders (not Ascended, not the Mirror) can only be stood on the floor twice each. */
+  var MAX_UP = 2;
+  function capped(def) { return def.kind === 'up' && !def.asc && placedCount(def.id) >= MAX_UP; }
+  /* One rebirth reward: the next item in ASC_ORDER, plus one new random square for Ascended items. */
+  function grantNext() {
+    var n = st.asc.length;
+    if (n >= ASC_ORDER.length) return;
+    st.inv[ASC_ORDER[n]] = (st.inv[ASC_ORDER[n]] || 0) + 1;
+    var free = [];
+    for (var i = 0; i < N; i++) if (st.asc.indexOf(i) < 0) free.push(i);
+    st.asc.push(free[Math.floor(Math.random() * free.length)]);
+  }
+  function landCost() { return Math.round(LAND_BASE * Math.pow(LAND_GROWTH, ownedCount - START_TILES)); }
+
+  function resetLand() {
+    owned.fill(false); ownedCount = 0;
+    for (var y = PLOT.y0; y <= PLOT.y1; y++) for (var x = PLOT.x0; x <= PLOT.x1; x++) { owned[x + y * COLS] = true; ownedCount++; }
+  }
+  function countLand() { ownedCount = 0; for (var i = 0; i < N; i++) if (owned[i]) ownedCount++; }
+  function buyable(x, y) {
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS || owned[x + y * COLS]) return false;
+    return (x > 0 && owned[x - 1 + y * COLS]) || (x < COLS - 1 && owned[x + 1 + y * COLS]) ||
+           (y > 0 && owned[x + (y - 1) * COLS]) || (y < ROWS - 1 && owned[x + (y + 1) * COLS]);
+  }
+
+  /* ---------- footprints ----------
+     A machine is ONE object, and every tile it covers points at that same object. Its x and y are its head tile.
+     That means grid[i] answers "what is on this tile?" for any tile, but a loop over the grid meets a big machine
+     once per tile, so every per-machine loop skips all but the head tile (isHead). */
+  function rot(dx, dy, dir) {
+    dir = ((dir % 4) + 4) % 4;
+    return dir === 0 ? [dx, dy] : dir === 1 ? [-dy, dx] : dir === 2 ? [-dx, -dy] : [dy, -dx];
+  }
+  function footprint(def, x, y, dir) {
+    if (!def.shape) return [[x, y]];
+    return def.shape.map(function (o) { var r = rot(o[0], o[1], dir); return [x + r[0], y + r[1]]; });
+  }
+  function isHead(c, i) { return c.x + c.y * COLS === i; }
+  function clearMachine(c) {
+    footprint(c.def, c.x, c.y, c.dir).forEach(function (p) {
+      var j = p[0] + p[1] * COLS;
+      if (p[0] >= 0 && p[1] >= 0 && p[0] < COLS && p[1] < ROWS && grid[j] === c) grid[j] = null;
+    });
+  }
+  function stamp(c) {
+    footprint(c.def, c.x, c.y, c.dir).forEach(function (p) { grid[p[0] + p[1] * COLS] = c; });
+  }
+  /* Every tile in bounds and owned. With `self` given, the tiles must also be empty or already this machine's (used when turning). */
+  function fits(def, x, y, dir, self) {
+    var f = footprint(def, x, y, dir);
+    for (var k = 0; k < f.length; k++) {
+      var cx = f[k][0], cy = f[k][1];
+      if (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS || !owned[cx + cy * COLS]) return false;
+      if (self !== undefined) { var o = grid[cx + cy * COLS]; if (o && o !== self) return false; }
+    }
+    return true;
+  }
+  /* The distinct machines standing under a footprint. Placing over them replaces them and refunds their price. */
+  function overlapped(def, x, y, dir) {
+    var out = [];
+    footprint(def, x, y, dir).forEach(function (p) {
+      if (p[0] < 0 || p[1] < 0 || p[0] >= COLS || p[1] >= ROWS) return;
+      var m = grid[p[0] + p[1] * COLS];
+      if (m && out.indexOf(m) < 0) out.push(m);
+    });
+    return out;
+  }
+  function shapeBox(def, dir) {
+    var b = { x0: 0, y0: 0, x1: 0, y1: 0 };
+    def.shape.forEach(function (o) {
+      var r = rot(o[0], o[1], dir);
+      b.x0 = Math.min(b.x0, r[0]); b.x1 = Math.max(b.x1, r[0]);
+      b.y0 = Math.min(b.y0, r[1]); b.y1 = Math.max(b.y1, r[1]);
+    });
+    return b;
+  }
+  function place(id, x, y, dir) {
+    var def = BY_ID[id];
+    var m = { def: def, dir: dir, x: x, y: y, timer: 0, pulse: 0, n: 0 };
+    stamp(m);
+    return m;
+  }
+  function rotateMachine(c) {
+    var nd = (c.dir + 1) % 4;
+    if (!c.def.shape) { c.dir = nd; return; }
+    if (!fits(c.def, c.x, c.y, nd, c)) { note('No room to turn ' + c.def.name + '. Clear the tiles it would swing into.'); return; }
+    clearMachine(c); c.dir = nd; stamp(c);
+  }
+  function starter() {
+    place('drill0', 8, 6, 0);
+    place('belt0', 9, 6, 0);
+    place('belt0', 10, 6, 0);
+    place('belt0', 11, 6, 0);
+    place('fur0', 12, 6, 0);
+    place('bcoal', 8, 7, 0);
+    place('belt0', 9, 7, 0);
+    place('belt0', 10, 7, 0);
+    place('belt0', 11, 7, 0);
+    place('bconv', 12, 7, 0);
+  }
+  function resetFloor() { grid.fill(null); ores = []; floaters = []; resetLand(); starter(); }
+
+  function save() {
+    try {
+      var cells = [], land = [];
+      for (var i = 0; i < N; i++) {
+        var c = grid[i]; if (c && isHead(c, i)) cells.push([c.x, c.y, c.def.id, c.dir, c.broken ? 1 : 0, c.weak ? 1 : 0]);
+        if (owned[i]) land.push(i);
+      }
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        cash: st.cash, run: st.run, total: st.total, cores: st.cores, spent: st.spent, rebirths: st.rebirths,
+        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, land: land, cells: cells
+      }));
+    } catch (e) {}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      var d = JSON.parse(raw);
+      if (!d || !Array.isArray(d.cells)) return false;
+      st.cash = +d.cash || 0; st.run = +d.run || 0; st.total = +d.total || 0;
+      st.cores = +d.cores || 0; st.spent = +d.spent || 0; st.rebirths = +d.rebirths || 0;
+      st.unlocked = (d.unlocked && typeof d.unlocked === 'object') ? d.unlocked : {};
+      st.energy = (d.energy != null && isFinite(+d.energy)) ? +d.energy : BASE_CAP;
+      st.inv = (d.inv && typeof d.inv === 'object') ? d.inv : {};
+      st.asc = Array.isArray(d.asc) ? d.asc.filter(function (i) { return i >= 0 && i < N; }) : [];
+      while (st.asc.length < Math.min(st.rebirths, ASC_ORDER.length)) grantNext();
+      resetLand();
+      if (Array.isArray(d.land)) {
+        owned.fill(false);
+        d.land.forEach(function (i) { if (i >= 0 && i < N) owned[i] = true; });
+        countLand();
+      }
+      d.cells.forEach(function (c) {
+        var ld = BY_ID[c[2]], dd = ((c[3] | 0) % 4 + 4) % 4;
+        if (ld && c[0] >= 0 && c[0] < COLS && c[1] >= 0 && c[1] < ROWS) {
+          var lf = footprint(ld, c[0], c[1], dd);
+          var good = lf.every(function (q) { return q[0] >= 0 && q[1] >= 0 && q[0] < COLS && q[1] < ROWS && !grid[q[0] + q[1] * COLS]; });
+          if (!good) return;
+          var lm = place(c[2], c[0], c[1], dd);
+          if (c[4]) lm.broken = true;
+          if (c[5]) lm.weak = true;
+          lf.forEach(function (q) { var j = q[0] + q[1] * COLS; if (!owned[j]) { owned[j] = true; ownedCount++; } });
+        }
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ---------- theme ---------- */
+  var T = {}, themeSig = '';
+  function readTheme() {
+    var cs = getComputedStyle(document.documentElement);
+    ['floor', 'fog', 'grid', 'belt', 'belt-mark', 'ink', 'accent', 'money', 'bad', 'r-common', 'r-uncommon', 'r-rare', 'r-epic', 'r-legendary', 'r-mythic', 'r-ascended', 'r-divine'].forEach(function (k) { T[k] = cs.getPropertyValue('--' + k).trim() || '#888'; });
+    var sig = T.floor + T.belt + T.accent;
+    if (sig !== themeSig) { themeSig = sig; drawIcons(); }
+  }
+
+  /* ---------- drawing ---------- */
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function rr(c, x, y, w, h, r) {
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x, y, w, h, r); else c.rect(x, y, w, h);
+  }
+
+  function chevrons(c, s, speed, tt) {
+    var ph = (tt * speed / 0.8) % 1;
+    c.lineWidth = Math.max(1.5, s * 0.06); c.lineCap = 'round'; c.lineJoin = 'round';
+    for (var k = 0; k < 3; k++) {
+      var x = (((ph + k / 3) % 1) - 0.5) * s * 0.8;
+      c.beginPath(); c.moveTo(x - s * 0.08, -s * 0.17); c.lineTo(x + s * 0.08, 0); c.lineTo(x - s * 0.08, s * 0.17); c.stroke();
+    }
+  }
+
+  function arrow(c, s, ang) {
+    c.save(); c.rotate(ang);
+    c.beginPath(); c.moveTo(0, 0); c.lineTo(s * 0.34, 0); c.stroke();
+    c.beginPath(); c.moveTo(s * 0.44, 0); c.lineTo(s * 0.28, -s * 0.11); c.lineTo(s * 0.28, s * 0.11); c.closePath(); c.fill();
+    c.restore();
+  }
+
+  function drawItem(c, def, dir, px, py, s, tt, pulse) {
+    c.save();
+    c.translate(px + s / 2, py + s / 2);
+    if (def.kind === 'belt') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.rotate(dir * Math.PI / 2);
+      c.strokeStyle = def.fx ? FX[def.fx].color : def.speed >= 4 ? T.accent : T['belt-mark'];
+      chevrons(c, s, def.speed, tt);
+    } else if (def.kind === 'bend') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      var P = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+      var ea = P[dir], eb = P[(dir + 1) % 4];
+      c.strokeStyle = T['belt-mark']; c.fillStyle = T['belt-mark']; c.lineWidth = Math.max(2, s * 0.07); c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(ea[0] * s * 0.36, ea[1] * s * 0.36); c.quadraticCurveTo(0, 0, eb[0] * s * 0.36, eb[1] * s * 0.36); c.stroke();
+      [ea, eb].forEach(function (e) {
+        c.save(); c.translate(e[0] * s * 0.4, e[1] * s * 0.4); c.rotate(Math.atan2(e[1], e[0]));
+        c.beginPath(); c.moveTo(s * 0.08, 0); c.lineTo(-s * 0.06, -s * 0.1); c.lineTo(-s * 0.06, s * 0.1); c.closePath(); c.fill();
+        c.restore();
+      });
+    } else if (def.kind === 'split') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.rotate(dir * Math.PI / 2);
+      c.strokeStyle = T['belt-mark']; c.fillStyle = T['belt-mark']; c.lineWidth = Math.max(1.5, s * 0.06); c.lineCap = 'round';
+      arrow(c, s, 0); arrow(c, s, -Math.PI / 2); arrow(c, s, Math.PI / 2);
+      c.fillStyle = T.accent; c.beginPath(); c.arc(0, 0, s * 0.1, 0, Math.PI * 2); c.fill();
+      if (def.mult) {
+        c.save(); c.rotate(-dir * Math.PI / 2);
+        c.fillStyle = '#f3ece6'; c.font = '600 ' + Math.max(8, Math.round(s * 0.2)) + 'px ' + MONO;
+        c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText('×' + def.mult, s * 0.28, s * 0.3);
+        c.restore();
+      }
+    } else if (def.kind === 'drill') {
+      c.rotate(dir * Math.PI / 2);
+      rr(c, -s * 0.46, -s * 0.46, s * 0.92, s * 0.92, s * 0.14);
+      c.fillStyle = def.color; c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = Math.max(1, s * 0.04); c.stroke();
+      c.fillStyle = 'rgba(0,0,0,0.38)';
+      c.beginPath(); c.arc(-s * 0.1, 0, s * 0.22, 0, Math.PI * 2); c.fill();
+      c.save(); c.translate(-s * 0.1, 0); c.rotate(tt * 3);
+      c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = Math.max(1, s * 0.05); c.lineCap = 'round';
+      for (var k = 0; k < 3; k++) { c.rotate(Math.PI * 2 / 3); c.beginPath(); c.moveTo(0, 0); c.lineTo(s * 0.16, 0); c.stroke(); }
+      c.restore();
+      c.fillStyle = 'rgba(255,255,255,0.92)';
+      c.beginPath(); c.moveTo(s * 0.46, 0); c.lineTo(s * 0.24, -s * 0.15); c.lineTo(s * 0.24, s * 0.15); c.closePath(); c.fill();
+    } else if (def.kind === 'up') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.08);
+      c.globalAlpha = 0.28; c.fillStyle = def.color; c.fill(); c.globalAlpha = 1;
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      c.save(); c.rotate(dir * Math.PI / 2);
+      c.globalAlpha = 0.55; c.strokeStyle = def.color; chevrons(c, s, 2, tt); c.restore();
+      c.fillStyle = T.ink; c.font = '600 ' + Math.max(8, Math.round(s * (def.mult >= 100 ? 0.25 : 0.3))) + 'px ' + MONO;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('×' + (def.fxMult || def.mult), 0, 0);
+    } else if (def.kind === 'tele') {
+      /* A ring with a pulse that swells outward, and an arrow showing which way ore leaves. */
+      var a0 = c.globalAlpha, ph = (tt * 0.9) % 1;
+      c.rotate(dir * Math.PI / 2);
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.2);
+      c.fillStyle = '#121826'; c.fill();
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      if (pulse > 0) { c.shadowColor = def.color; c.shadowBlur = s * 0.5; }
+      c.lineWidth = Math.max(1.5, s * 0.05);
+      c.beginPath(); c.arc(0, 0, s * 0.3, 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = a0 * (1 - ph);
+      c.beginPath(); c.arc(0, 0, s * (0.06 + 0.22 * ph), 0, Math.PI * 2); c.stroke();
+      c.globalAlpha = a0; c.shadowBlur = 0;
+      c.fillStyle = def.color;
+      c.beginPath(); c.moveTo(s * 0.46, 0); c.lineTo(s * 0.3, -s * 0.12); c.lineTo(s * 0.3, s * 0.12); c.closePath(); c.fill();
+    } else if (def.kind === 'conv') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.12);
+      c.fillStyle = '#231d12'; c.fill();
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      if (pulse > 0) { c.shadowColor = def.color; c.shadowBlur = s * 0.5; }
+      c.fillStyle = def.color;
+      c.beginPath();
+      c.moveTo(s * 0.07, -s * 0.34); c.lineTo(-s * 0.17, s * 0.04); c.lineTo(-s * 0.01, s * 0.04);
+      c.lineTo(-s * 0.08, s * 0.34); c.lineTo(s * 0.17, -s * 0.07); c.lineTo(s * 0.01, -s * 0.07);
+      c.closePath(); c.fill();
+      c.shadowBlur = 0;
+    } else if (def.kind === 'bat') {
+      rr(c, -s * 0.36, -s * 0.4, s * 0.72, s * 0.84, s * 0.1);
+      c.fillStyle = '#16231d'; c.fill();
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      c.fillStyle = def.color; c.fillRect(-s * 0.12, -s * 0.48, s * 0.24, s * 0.08);
+      var lv = Math.round(Math.min(1, st.energy / capNow) * 3);
+      for (var b = 0; b < 3; b++) {
+        c.globalAlpha = b < lv ? 1 : 0.2;
+        c.fillRect(-s * 0.22, s * 0.28 - b * s * 0.24, s * 0.44, s * 0.16);
+      }
+      c.globalAlpha = 1;
+    } else if (def.kind === 'dup') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.08);
+      c.globalAlpha = 0.28; c.fillStyle = def.color; c.fill(); c.globalAlpha = 1;
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      c.save(); c.rotate(dir * Math.PI / 2);
+      c.globalAlpha = 0.55; chevrons(c, s, 2, tt); c.restore();
+      c.strokeStyle = T.ink; c.lineWidth = Math.max(1.5, s * 0.06);
+      c.beginPath(); c.arc(-s * 0.13, 0, s * 0.2, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.arc(s * 0.13, 0, s * 0.2, 0, Math.PI * 2); c.stroke();
+    } else {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.12);
+      c.fillStyle = '#2b2320'; c.fill();
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      if (pulse > 0) { c.shadowColor = def.color; c.shadowBlur = s * 0.5; }
+      rr(c, -s * 0.3, -s * 0.34, s * 0.6, s * 0.34, s * 0.1);
+      c.globalAlpha = 0.6 + Math.min(0.4, pulse * 2); c.fillStyle = def.color; c.fill();
+      c.globalAlpha = 1; c.shadowBlur = 0;
+      c.fillStyle = '#f3ece6'; c.font = '600 ' + Math.max(8, Math.round(s * 0.26)) + 'px ' + MONO;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('×' + def.mult, 0, s * 0.22);
+    }
+    c.restore();
+    /* A dot in the top-right corner shows which effect an item makes (belts, upgraders) or likes (furnaces). */
+    var fk = def.fx || def.likes;
+    if (fk && FX[fk]) {
+      c.save(); c.translate(px, py);
+      c.fillStyle = FX[fk].color; c.strokeStyle = 'rgba(0,0,0,0.55)'; c.lineWidth = Math.max(1, s * 0.04);
+      c.beginPath(); c.arc(s * 0.82, s * 0.18, s * 0.1, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.restore();
+    }
+    if (def.rarity === 'ascended') {
+      c.save(); c.translate(px, py);
+      c.strokeStyle = T['r-ascended']; c.lineWidth = Math.max(2, s * 0.06);
+      c.shadowColor = T['r-ascended']; c.shadowBlur = s * 0.3;
+      rr(c, s * 0.03, s * 0.03, s * 0.94, s * 0.94, s * 0.12); c.stroke();
+      c.restore();
+    }
+    if (def.rarity && def.rarity !== 'common') {
+      c.save(); c.translate(px, py);
+      c.fillStyle = T['r-' + def.rarity];
+      c.beginPath(); c.moveTo(s * 0.04, s * 0.96); c.lineTo(s * 0.3, s * 0.96); c.lineTo(s * 0.04, s * 0.7); c.closePath(); c.fill();
+      c.restore();
+    }
+    if (def.broken) {
+      c.save(); c.translate(px, py);
+      c.strokeStyle = T.bad; c.lineWidth = Math.max(1.5, s * 0.07); c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(s * 0.62, s * 0.1); c.lineTo(s * 0.5, s * 0.4); c.lineTo(s * 0.64, s * 0.55); c.lineTo(s * 0.52, s * 0.9); c.stroke();
+      c.restore();
+    }
+    if (def.core) {
+      c.save(); c.translate(px, py);
+      c.fillStyle = T.accent;
+      c.beginPath(); c.moveTo(s * 0.04, s * 0.04); c.lineTo(s * 0.3, s * 0.04); c.lineTo(s * 0.04, s * 0.3); c.closePath(); c.fill();
+      c.restore();
+    }
+  }
+
+  /* A shaped item: one merged body in the item's colour, then the normal one-tile picture on its head tile.
+     (px, py) is the top-left corner of the HEAD tile, and `s` is the size of one tile. */
+  function drawBig(c, def, dir, px, py, s, tt, pulse) {
+    var offs = def.shape.map(function (o) { return rot(o[0], o[1], dir); });
+    var has = {};
+    offs.forEach(function (o) { has[o[0] + ',' + o[1]] = 1; });
+    var g = Math.max(1.5, s * 0.04), a = c.globalAlpha;
+    c.save();
+    c.beginPath();
+    offs.forEach(function (o) {
+      var x = px + o[0] * s, y = py + o[1] * s;
+      var r = has[(o[0] + 1) + ',' + o[1]], d = has[o[0] + ',' + (o[1] + 1)];
+      c.rect(x + g, y + g, s - 2 * g, s - 2 * g);
+      if (r) c.rect(x + s - g, y + g, 2 * g, s - 2 * g);            /* bridge to the tile on the right */
+      if (d) c.rect(x + g, y + s - g, s - 2 * g, 2 * g);            /* bridge to the tile below */
+      if (r && d && has[(o[0] + 1) + ',' + (o[1] + 1)]) c.rect(x + s - g, y + s - g, 2 * g, 2 * g);
+    });
+    c.fillStyle = '#0d1211'; c.globalAlpha = a * 0.5; c.fill();
+    c.fillStyle = def.color; c.globalAlpha = a * 0.32; c.fill();
+    c.globalAlpha = a;
+    c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.lineCap = 'round';
+    c.beginPath();
+    offs.forEach(function (o) {
+      var x = px + o[0] * s, y = py + o[1] * s;
+      if (!has[o[0] + ',' + (o[1] - 1)]) { c.moveTo(x + g, y + g); c.lineTo(x + s - g, y + g); }
+      if (!has[o[0] + ',' + (o[1] + 1)]) { c.moveTo(x + g, y + s - g); c.lineTo(x + s - g, y + s - g); }
+      if (!has[(o[0] - 1) + ',' + o[1]]) { c.moveTo(x + g, y + g); c.lineTo(x + g, y + s - g); }
+      if (!has[(o[0] + 1) + ',' + o[1]]) { c.moveTo(x + s - g, y + g); c.lineTo(x + s - g, y + s - g); }
+    });
+    c.stroke();
+    c.fillStyle = def.color; c.globalAlpha = a * 0.55;
+    offs.forEach(function (o) {
+      if (o[0] === 0 && o[1] === 0) return;
+      c.beginPath(); c.arc(px + (o[0] + 0.5) * s, py + (o[1] + 0.5) * s, s * 0.09, 0, Math.PI * 2); c.fill();
+    });
+    c.restore();
+    drawItem(c, def, dir, px, py, s, tt, pulse);
+  }
+  function drawAny(c, def, dir, px, py, s, tt, pulse) {
+    if (def.shape) drawBig(c, def, dir, px, py, s, tt, pulse); else drawItem(c, def, dir, px, py, s, tt, pulse);
+  }
+
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var cell = 30;
+
+  function resize() {
+    var r = canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    cell = canvas.width / COLS;
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+  window.addEventListener('resize', resize);
+
+  function orePos(o) {
+    var d = DIRS[o.out], f = DIRS[o.from], px, py, k;
+    if (o.t < 0.5) { k = o.t / 0.5; px = o.x + 0.5 - f[0] * 0.5 * (1 - k); py = o.y + 0.5 - f[1] * 0.5 * (1 - k); }
+    else { k = (o.t - 0.5) / 0.5; px = o.x + 0.5 + d[0] * 0.5 * k; py = o.y + 0.5 + d[1] * 0.5 * k; }
+    return [px, py];
+  }
+
+  function oreColor(v) {
+    var h = (28 + 38 * Math.log10(Math.max(1, v))) % 360;
+    return 'hsl(' + h.toFixed(0) + ',70%,56%)';
+  }
+
+  function draw() {
+    var c = ctx, s = cell, tt = reduce ? 0 : time, x, y, i;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, canvas.width, canvas.height);
+    c.fillStyle = T.floor; c.fillRect(0, 0, canvas.width, canvas.height);
+
+    c.fillStyle = T.fog;
+    c.strokeStyle = T.grid; c.lineWidth = 1; c.beginPath();
+    for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) {
+      if (owned[x + y * COLS]) continue;
+      var fx = Math.floor(x * s), fy = Math.floor(y * s), fw = Math.ceil(s), fh = Math.ceil(s);
+      c.fillRect(fx, fy, fw, fh);
+      c.moveTo(fx + fw * 0.15, fy + fh * 0.85); c.lineTo(fx + fw * 0.85, fy + fh * 0.15);
+    }
+    c.stroke();
+
+    c.strokeStyle = T.grid; c.lineWidth = 1; c.beginPath();
+    for (x = 1; x < COLS; x++) { c.moveTo(Math.round(x * s) + 0.5, 0); c.lineTo(Math.round(x * s) + 0.5, canvas.height); }
+    for (y = 1; y < ROWS; y++) { c.moveTo(0, Math.round(y * s) + 0.5); c.lineTo(canvas.width, Math.round(y * s) + 0.5); }
+    c.stroke();
+
+    if (st.asc.length) {
+      var pul = reduce ? 0.7 : 0.6 + 0.25 * Math.sin(time * 2.2);
+      c.strokeStyle = T['r-ascended']; c.fillStyle = T['r-ascended']; c.lineWidth = Math.max(2, s * 0.06);
+      for (i = 0; i < st.asc.length; i++) {
+        var ax = st.asc[i] % COLS, ay = Math.floor(st.asc[i] / COLS);
+        c.globalAlpha = 0.3; c.fillRect(ax * s + 1, ay * s + 1, s - 2, s - 2);
+        c.globalAlpha = pul; c.lineWidth = Math.max(2.5, s * 0.09); c.strokeRect(ax * s + 3, ay * s + 3, s - 6, s - 6);
+      }
+      c.globalAlpha = 1;
+    }
+
+    if (landMode) {
+      c.strokeStyle = T.accent; c.lineWidth = 1.5; c.globalAlpha = 0.55;
+      for (y = 0; y < ROWS; y++) for (x = 0; x < COLS; x++) {
+        if (buyable(x, y)) c.strokeRect(x * s + 2, y * s + 2, s - 4, s - 4);
+      }
+      c.globalAlpha = 1;
+    }
+
+    for (i = 0; i < N; i++) {
+      var it = grid[i];
+      if (it && isHead(it, i)) {
+        drawAny(c, it.def, it.dir, it.x * s, it.y * s, s, tt, it.pulse);
+        if (it.blocked) {
+          c.strokeStyle = T.bad; c.lineWidth = Math.max(2, s * 0.07);
+          c.strokeRect(it.x * s + 2, it.y * s + 2, s - 4, s - 4);
+        }
+        /* Broken and weak marks go on every tile the machine covers. */
+        var fp = footprint(it.def, it.x, it.y, it.dir);
+        for (var q = 0; q < fp.length; q++) {
+          var bx0 = fp[q][0] * s, by0 = fp[q][1] * s;
+          if (it.broken) {
+            c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(bx0, by0, s, s);
+            c.strokeStyle = T.bad; c.lineWidth = Math.max(2, s * 0.07); c.lineCap = 'round'; c.lineJoin = 'round';
+            c.beginPath(); c.moveTo(bx0 + s * 0.62, by0 + s * 0.1); c.lineTo(bx0 + s * 0.5, by0 + s * 0.4);
+            c.lineTo(bx0 + s * 0.64, by0 + s * 0.55); c.lineTo(bx0 + s * 0.52, by0 + s * 0.9); c.stroke();
+          }
+          if (it.weak) {
+            c.strokeStyle = T.accent; c.lineWidth = Math.max(2, s * 0.06);
+            c.setLineDash([s * 0.14, s * 0.1]);
+            c.strokeRect(bx0 + 3, by0 + 3, s - 6, s - 6);
+            c.setLineDash([]);
+          }
+        }
+      }
+    }
+
+    if (hover) {
+      var hx = hover.x * s, hy = hover.y * s, hi = hover.x + hover.y * COLS, ex = grid[hi];
+      if (landMode) {
+        if (buyable(hover.x, hover.y)) {
+          var lc = landCost(), afford = st.cash >= lc;
+          c.strokeStyle = afford ? T.accent : T.bad; c.lineWidth = 2; c.strokeRect(hx + 1, hy + 1, s - 2, s - 2);
+          c.fillStyle = afford ? T.accent : T.bad;
+          c.font = '600 ' + Math.max(9, Math.round(s * 0.3)) + 'px ' + MONO;
+          c.textAlign = 'center'; c.textBaseline = 'middle';
+          c.fillText('$' + fmt(lc), hx + s / 2, hy + s / 2);
+        }
+      } else if (erase) {
+        c.strokeStyle = T.bad; c.lineWidth = 2; c.strokeRect(hx + 1, hy + 1, s - 2, s - 2);
+      } else if (selected) {
+        var gd = directional(selected) ? dirNew : 0;
+        var gRefund = 0;
+        overlapped(selected, hover.x, hover.y, gd).forEach(function (m) { gRefund += m.def.cost; });
+        var gSame = 0;
+        overlapped(selected, hover.x, hover.y, gd).forEach(function (m) { if (m.def.id === selected.id) gSame++; });
+        var gCap = selected.kind === 'up' && !selected.asc && placedCount(selected.id) - gSame >= MAX_UP;
+        var ok = owned[hi] && !gCap && fits(selected, hover.x, hover.y, gd) && st.cash + gRefund >= selected.cost &&
+                 (!selected.asc || (st.asc.indexOf(hi) >= 0 && (available(selected.id) > 0 || (ex && ex.def.id === selected.id))));
+        if (owned[hi]) {
+          c.globalAlpha = 0.65;
+          drawAny(c, selected, gd, hx, hy, s, 0, 0);
+          c.globalAlpha = 1;
+        }
+        c.strokeStyle = ok ? T.accent : T.bad; c.lineWidth = 2;
+        footprint(selected, hover.x, hover.y, gd).forEach(function (q2) { c.strokeRect(q2[0] * s + 1, q2[1] * s + 1, s - 2, s - 2); });
+      } else {
+        c.strokeStyle = T['belt-mark']; c.lineWidth = 1; c.strokeRect(hx + 1, hy + 1, s - 2, s - 2);
+      }
+    }
+
+    for (i = 0; i < ores.length; i++) {
+      var o = ores[i];
+      if (!grid[o.i]) continue;
+      var p = orePos(o);
+      var r = s * (0.13 + Math.min(0.08, Math.log10(Math.max(1, o.v)) * 0.012)) * (o.flash > 0 ? 1.35 : 1);
+      c.beginPath(); c.arc(p[0] * s, p[1] * s, r, 0, Math.PI * 2);
+      c.fillStyle = o.coal ? '#4b5154' : oreColor(o.v); c.fill();
+      c.strokeStyle = o.coal ? 'rgba(255,170,60,0.95)' : 'rgba(0,0,0,0.4)'; c.lineWidth = Math.max(1, s * 0.03); c.stroke();
+      /* An ore with an effect gets a coloured ring and a fainter halo. The halo shrinks as the effect runs down,
+         and in the last 1.5 seconds the whole ring flickers as a warning that it is about to wear off. */
+      if (o.fx && FX[o.fx] && !(o.fxT < 1.5 && Math.sin(time * 28) > 0)) {
+        var life = FX[o.fx].ttl ? Math.max(0, Math.min(1, o.fxT / FX[o.fx].ttl)) : 1;
+        c.strokeStyle = FX[o.fx].color; c.lineWidth = Math.max(1.5, s * 0.06); c.stroke();
+        c.globalAlpha = 0.4; c.beginPath(); c.arc(p[0] * s, p[1] * s, r * (1.2 + 0.5 * life), 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
+      }
+    }
+
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = '600 ' + Math.max(9, Math.round(s * 0.3)) + 'px ' + MONO;
+    for (i = 0; i < floaters.length; i++) {
+      var f = floaters[i];
+      c.globalAlpha = Math.max(0, 1 - f.age);
+      c.fillStyle = f.bad ? T.bad : f.pw ? T.accent : T.money;
+      c.fillText(f.txt, f.x * s, (f.y - f.age * 0.9) * s);
+    }
+    c.globalAlpha = 1;
+
+    if (hover && !painting) {
+      var tag = grid[hover.x + hover.y * COLS];
+      if (tag) {
+        var fs = Math.max(11, Math.round(s * 0.34)), pad = Math.round(fs * 0.5);
+        c.font = '600 ' + fs + 'px "IBM Plex Sans", system-ui, sans-serif';
+        var label = tag.def.name + (tag.def.rarity ? ' · ' + RAR_LABEL[tag.def.rarity] : '') +
+                    (tag.blocked ? ' · needs a belt in front' : '') +
+                    (tag.broken ? ' · broken, click to repair $' + fmt(repairCost(tag.def)) : '') +
+                    (tag.weak && !tag.broken ? ' · at 50% until the power store is full' : '');
+        var tw = c.measureText(label).width, bw = tw + pad * 2, bh = fs + pad * 1.4;
+        var bx = Math.min(Math.max(2, hover.x * s + s / 2 - bw / 2), canvas.width - bw - 2);
+        var by = hover.y * s - bh - 4;
+        if (by < 2) by = hover.y * s + s + 4;
+        rr(c, bx, by, bw, bh, 4);
+        c.fillStyle = T.ink; c.fill();
+        c.fillStyle = T.floor; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(label, bx + bw / 2, by + bh / 2 + 1);
+      }
+    }
+  }
+
+  /* ---------- simulation ---------- */
+  function sell(o, f) {
+    var m = Math.random() < effCell(f) ? f.def.mult : 1;
+    /* A furnace that cares about effects scales the sale by how the ore's effect matches its table. */
+    var fxm = (f.def.fxBonus && o.fx && f.def.fxBonus[o.fx] != null) ? f.def.fxBonus[o.fx] : 1;
+    var gain = o.v * m * fxm;
+    st.cash += gain; st.run += gain; st.total += gain; earnedAcc += gain;
+    f.pulse = 0.25;
+    if (floaters.length < 22) floaters.push({ x: f.x + 0.5, y: f.y + 0.1, txt: '+$' + fmt(gain), age: 0 });
+  }
+
+  function waste(n) {
+    if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '×', age: 0, bad: true });
+  }
+  function convert(o, n) {
+    var e = o.v * n.def.rate;
+    st.energy = Math.min(capNow, st.energy + e);
+    n.pulse = 0.25;
+    if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '+' + fmt(e) + ' E', age: 0, pw: true });
+  }
+
+  /* Machines that can break when power runs out. Belts, corners, converters and batteries are safe. */
+  function breakable(def) {
+    return def.draw > 0 && (def.kind === 'drill' || def.kind === 'up' || def.kind === 'dup' || def.kind === 'split' || def.kind === 'fur' || def.kind === 'tele');
+  }
+  /* Ascended items cost nothing to buy, so their repair price comes from their power draw instead. */
+  function repairCost(def) {
+    return Math.round(def.asc ? def.draw * 1e9 : Math.max(def.cost * 0.1, def.draw * 100));
+  }
+  function breakOne() {
+    var pool = [];
+    for (var i = 0; i < N; i++) { var g = grid[i]; if (g && isHead(g, i) && !g.broken && breakable(g.def)) pool.push(g); }
+    if (!pool.length) return;
+    var v = pool[Math.floor(Math.random() * pool.length)];
+    v.broken = true; v.weak = false;
+    if (floaters.length < 22) floaters.push({ x: v.x + 0.5, y: v.y + 0.1, txt: '!', age: 0, bad: true });
+    note(v.def.name + ' broke because the power ran out. Click it to repair it for $' + fmt(repairCost(v.def)) + '.');
+  }
+  function repair(c) {
+    var cost = repairCost(c.def);
+    if (st.cash < cost) { note('Repairing ' + c.def.name + ' costs $' + fmt(cost) + '. You need more cash.'); return; }
+    st.cash -= cost; c.broken = false; c.weak = true;
+    note('Repaired ' + c.def.name + ' for $' + fmt(cost) + '. It runs at 50% until the power store is full again.');
+  }
+
+  /* Anything that boosts ore. A drill may not hand ore straight to one of these. */
+  function isUpgrader(def) { return def.kind === 'up' || def.kind === 'dup' || (def.kind === 'split' && !!def.mult); }
+
+  /* Teleporters pair up by TYPE: an ore that enters one Warp pad comes out of another Warp pad. With several, they take turns.
+     The ore reappears on the destination's head tile and leaves the way that tile points. Returns false if there is no partner. */
+  function teleport(o, n) {
+    var list = [];
+    for (var i = 0; i < N; i++) {
+      var g = grid[i];
+      if (g && isHead(g, i) && g !== n && g.def.id === n.def.id && !g.broken) list.push(g);
+    }
+    if (!list.length) return false;
+    var d = list[n.n % list.length];
+    n.n++; n.pulse = 0.25; d.pulse = 0.25;
+    if (n.def.mult) o.v *= n.def.mult;
+    o.x = d.x; o.y = d.y; o.i = d.x + d.y * COLS; o.from = d.dir; o.out = d.dir; o.t = 0.5; o.flash = 0.25;
+    return true;
+  }
+
+  function accepts(x, y) {
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return false;
+    var c = grid[x + y * COLS];
+    return !!c && c.def.kind !== 'drill' && c.def.kind !== 'bat';
+  }
+  function exitDir(c, travel) {
+    if (c.def.kind === 'bend') {
+      /* A corner joins side `dir` to side `dir + 1`. Ore leaves by whichever of the two it didn't come in through. */
+      var entry = (travel + 2) % 4;
+      if (entry === c.dir) return (c.dir + 1) % 4;
+      if (entry === (c.dir + 1) % 4) return c.dir;
+      return travel;
+    }
+    if (c.def.kind === 'split') {
+      var opts = [c.dir, (c.dir + 1) % 4, (c.dir + 3) % 4];
+      for (var j = 0; j < 3; j++) {
+        var dd = opts[(c.n + j) % 3], v = DIRS[dd];
+        if (accepts(c.x + v[0], c.y + v[1])) { c.n = (c.n + j + 1) % 3; return dd; }
+      }
+    }
+    return c.dir;
+  }
+
+  function tick(dt) {
+    time += dt;
+    var i, k, demand = 0, cap = BASE_CAP, brokenN = 0, weakN = 0;
+    for (i = 0; i < N; i++) {
+      var g = grid[i];
+      if (!g || !isHead(g, i)) continue;
+      if (g.broken) brokenN++; else { demand += g.def.draw || 0; if (g.weak) weakN++; }
+      if (g.def.kind === 'bat') cap += g.def.cap;
+    }
+    capNow = cap; demandNow = demand; brokenCount = brokenN; weakCount = weakN;
+    /* Full store: every recently repaired machine goes back to full speed. This is checked before this frame's
+       power use is taken out, because a store that was topped up to the brim would otherwise always read as just short. */
+    if (weakN && st.energy >= cap) {
+      for (i = 0; i < N; i++) if (grid[i] && grid[i].weak) grid[i].weak = false;
+      weakCount = 0;
+    }
+    var need = demand * dt;
+    if (need > 0) {
+      if (st.energy >= need) { st.energy -= need; effNow = 1; effRaw = 1; }
+      else { effRaw = st.energy / need; effNow = Math.max(0.3, effRaw); st.energy = 0; }
+    } else { effNow = 1; effRaw = 1; }
+    if (st.energy > cap) st.energy = cap;
+    effS = effS * 0.97 + effNow * 0.03;
+    /* While the store sits at zero, time builds up. Every BREAK_AFTER seconds one machine breaks. Power coming back drains it twice as fast. */
+    var starved = need > 0 && st.energy <= 0;
+    outage = starved ? outage + dt : Math.max(0, outage - dt * 2);
+    if (outage >= BREAK_AFTER) { outage -= BREAK_AFTER; breakOne(); }
+    for (i = 0; i < N; i++) {
+      var c = grid[i];
+      if (!c || !isHead(c, i)) continue;
+      if (c.pulse > 0) c.pulse = Math.max(0, c.pulse - dt);
+      if (c.def.kind === 'drill') {
+        if (c.broken) { c.blocked = false; continue; }
+        var fd = DIRS[c.dir], fx = c.x + fd[0], fy = c.y + fd[1];
+        var fn = (fx >= 0 && fy >= 0 && fx < COLS && fy < ROWS) ? grid[fx + fy * COLS] : null;
+        c.blocked = !!fn && isUpgrader(fn.def);
+        if (c.blocked) { c.timer = Math.min(c.timer, c.def.interval); continue; }
+        c.timer += dt * effCell(c);
+        if (c.timer >= c.def.interval) {
+          if (ores.length < CAP) {
+            c.timer -= c.def.interval;
+            ores.push({ i: i, x: c.x, y: c.y, t: 0.5, from: c.dir, out: c.dir, v: c.def.value, coal: !!c.def.coal, age: 0, seen: [], flash: 0 });
+          } else { c.timer = c.def.interval; }
+        }
+      }
+    }
+    for (k = ores.length - 1; k >= 0; k--) {
+      var o = ores[k], cc = grid[o.i];
+      o.age += dt;
+      /* The effect wears off. This runs in real seconds, so a slow belt or low power gives the effect less distance to work in. */
+      if (o.fx) { o.fxT -= dt; if (o.fxT <= 0) { o.fx = null; o.fxT = 0; } }
+      if (!cc || cc.def.kind === 'fur' || cc.def.kind === 'conv' || cc.def.kind === 'bat' || o.age > 90) { ores.splice(k, 1); continue; }
+      o.t += (cc.def.kind === 'belt' ? cc.def.speed : 2) * dt * effCell(cc);
+      if (o.flash > 0) o.flash -= dt;
+      /* An effect belt marks any ore that is past the middle of its tile. Marking twice changes nothing, so no `seen` needed. */
+      if (cc.def.fx && cc.def.kind === 'belt' && o.t >= 0.5 && !o.coal) setFx(o, cc.def.fx);
+      /* `seen` remembers machines, not tiles, so an ore that walks across a big upgrader is only boosted once. */
+      var mk = cc.x + cc.y * COLS;
+      if (o.t >= 0.5 && !o.coal && o.seen.indexOf(mk) < 0) {
+        if (cc.def.kind === 'up' || (cc.def.kind === 'split' && cc.def.mult)) {
+          o.seen.push(mk); o.flash = 0.25;
+          if (!cc.broken && Math.random() < effCell(cc)) {
+            /* Read the ore's effect BEFORE this machine sets its own, so a Resonance tank rewards what came in. */
+            o.v *= (cc.def.fxMult && o.fx) ? cc.def.fxMult : cc.def.mult;
+            if (cc.def.fx) setFx(o, cc.def.fx);
+          }
+        } else if (cc.def.kind === 'dup') {
+          o.seen.push(mk); o.flash = 0.25;
+          if (!cc.broken && Math.random() < 0.5 * effCell(cc) && ores.length < CAP) {
+            ores.push({ i: o.i, x: o.x, y: o.y, t: Math.max(0.5, o.t - 0.2), from: o.from, out: o.out, v: o.v, fx: o.fx, fxT: o.fxT, age: o.age, seen: o.seen.slice(), flash: 0.25 });
+          }
+        }
+      }
+      if (o.t >= 1) {
+        var d = DIRS[o.out], nx = o.x + d[0], ny = o.y + d[1];
+        if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) { ores.splice(k, 1); continue; }
+        var ni = nx + ny * COLS, n = grid[ni];
+        if (!n || n.def.kind === 'drill' || n.def.kind === 'bat') { ores.splice(k, 1); continue; }
+        if (n.def.kind === 'fur') { if (o.coal || n.broken) waste(n); else sell(o, n); ores.splice(k, 1); continue; }
+        if (n.def.kind === 'conv') { if (o.coal) convert(o, n); else waste(n); ores.splice(k, 1); continue; }
+        if (n.def.kind === 'tele') { if (!n.broken && teleport(o, n)) continue; waste(n); ores.splice(k, 1); continue; }
+        o.x = nx; o.y = ny; o.i = ni; o.from = o.out; o.t -= 1; o.out = exitDir(n, o.from);
+      }
+    }
+    for (k = floaters.length - 1; k >= 0; k--) {
+      floaters[k].age += dt;
+      if (floaters[k].age >= 1) floaters.splice(k, 1);
+    }
+  }
+
+  /* ---------- placing, removing and buying land ---------- */
+  var painting = false, lastCell = null, paintMode = null;
+
+  function cellAt(e) {
+    var r = canvas.getBoundingClientRect();
+    var x = Math.floor((e.clientX - r.left) / r.width * COLS);
+    var y = Math.floor((e.clientY - r.top) / r.height * ROWS);
+    if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return null;
+    return { x: x, y: y };
+  }
+
+  function removeAt(p) {
+    var i = p.x + p.y * COLS, c = grid[i];
+    if (!c) return;
+    st.cash += c.def.cost;
+    clearMachine(c);
+  }
+
+  function applyAt(p) {
+    var i = p.x + p.y * COLS, ex = grid[i];
+    if (paintMode === 'land') {
+      if (buyable(p.x, p.y)) {
+        var lc = landCost();
+        if (st.cash >= lc) { st.cash -= lc; owned[i] = true; ownedCount++; }
+        else note('Not enough cash. The next tile costs $' + fmt(lc) + '.');
+      }
+      return;
+    }
+    if (paintMode === 'erase') { removeAt(p); lastCell = p; return; }
+    if (paintMode === 'rotate') {
+      if (ex && directional(ex.def)) rotateMachine(ex);
+      return;
+    }
+    var def = selected;
+    if (!def || !owned[i]) { lastCell = p; return; }
+    if (def.core && !st.unlocked[def.id]) return;
+    if (def.asc) {
+      if (st.asc.indexOf(i) < 0) { note('Ascended items only fit on the glowing squares.'); lastCell = p; return; }
+      if (!(ex && ex.def.id === def.id) && available(def.id) < 1) {
+        note('No ' + def.name + ' left to place. Remove the one on the floor to move it.'); lastCell = p; return;
+      }
+    }
+    /* A shaped item is placed with one click. Dragging would stamp overlapping copies on top of each other. */
+    if (def.shape && lastCell) return;
+    if (lastCell && (lastCell.x !== p.x || lastCell.y !== p.y) && directional(def) && def.kind !== 'bend') {
+      var dx = p.x - lastCell.x, dy = p.y - lastCell.y, nd = -1;
+      if (Math.abs(dx) + Math.abs(dy) === 1) nd = dx === 1 ? 0 : dy === 1 ? 1 : dx === -1 ? 2 : 3;
+      if (nd >= 0) {
+        var prev = grid[lastCell.x + lastCell.y * COLS];
+        if (prev && prev.def.id === def.id) prev.dir = nd;
+        dirNew = nd;
+      }
+    }
+    if (ex && ex.def.id === def.id) {
+      if (!lastCell && directional(def)) rotateMachine(ex);
+      lastCell = p; return;
+    }
+    var nd = directional(def) ? dirNew : 0;
+    if (!fits(def, p.x, p.y, nd)) {
+      note(def.name + ' covers ' + def.shape.length + ' tiles and they all need to be on land you own. Press R to turn it, or buy more land.');
+      lastCell = p; return;
+    }
+    var over = overlapped(def, p.x, p.y, nd), refund = 0;
+    over.forEach(function (m) { refund += m.def.cost; });
+    /* Replacing a copy of the same upgrader frees its slot, so only count the ones that would stay. */
+    if (def.kind === 'up' && !def.asc && placedCount(def.id) - over.filter(function (m) { return m.def.id === def.id; }).length >= MAX_UP) {
+      note('You can only have ' + MAX_UP + ' ' + def.name + ' on the floor at once. Remove one to move it.'); lastCell = p; return;
+    }
+    if (st.cash + refund < def.cost) { lastCell = p; return; }
+    st.cash += refund - def.cost;
+    over.forEach(clearMachine);
+    place(def.id, p.x, p.y, nd);
+    lastCell = p;
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    var p = cellAt(e);
+    if (!p) return;
+    var bc = grid[p.x + p.y * COLS];
+    if (bc && bc.broken && !erase && !landMode && e.button !== 2) { hover = p; repair(bc); return; }
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    hover = p; painting = true; lastCell = null;
+    paintMode = (e.button === 2 || erase) ? 'erase' : landMode ? 'land' : (selected ? 'place' : 'rotate');
+    applyAt(p);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    var p = cellAt(e);
+    hover = p;
+    if (painting && p && paintMode !== 'rotate' && (!lastCell || lastCell.x !== p.x || lastCell.y !== p.y)) applyAt(p);
+  });
+  function endPaint() { painting = false; lastCell = null; }
+  canvas.addEventListener('pointerup', endPaint);
+  canvas.addEventListener('pointercancel', endPaint);
+  canvas.addEventListener('pointerleave', function () { if (!painting) hover = null; });
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ---------- shop ---------- */
+  var rows = {}, costEls = {}, iconCanvases = {}, armed = null, armTimer = null, elAscNote = null;
+  var elHint = document.getElementById('hint');
+  function note(msg) { elHint.textContent = msg; }
+
+  function statLine(d) {
+    var s = baseStat(d) + (d.shape ? ' · ' + d.shape.length + ' tiles' : '');
+    if (!d.draw) return s;
+    return s + ' · uses ' + d.draw + ' E/s' + (d.asc ? ' · stops without power' : '');
+  }
+  function baseStat(d) {
+    if (d.coal) return 'Coal worth ' + fmt(d.value) + ' every ' + d.interval + 's';
+    if (d.kind === 'conv') return 'Takes coal only. Gives ' + d.rate + ' energy per coal value';
+    if (d.kind === 'bat') return 'Stores +' + d.cap + ' energy';
+    if (d.kind === 'belt' && d.fx) return d.speed + ' cells per second. Makes ore ' + fxNote(d.fx);
+    if (d.kind === 'belt') return d.speed + ' cells per second';
+    if (d.kind === 'tele') return 'Ore sent in comes out of another ' + d.name + (d.mult ? ', ×' + d.mult : '') + '. Needs two';
+    if (d.kind === 'bend') return 'Joins two sides at a right angle. Ore can travel either way';
+    if (d.kind === 'split' && d.mult) return 'Splits ore three ways and multiplies it ×' + d.mult;
+    if (d.kind === 'split') return 'Sends ore forward, left and right in turn';
+    if (d.kind === 'dup') return '50% chance to copy each ore';
+    if (d.kind === 'drill') return 'Ore worth $' + fmt(d.value) + ' every ' + d.interval + 's';
+    if (d.kind === 'up' && d.fxMult) return '×' + d.fxMult + ' on ore with an effect, ×1 without · max ' + MAX_UP + ' on the floor';
+    if (d.kind === 'up' && d.fx) return '×' + d.mult + ' and makes ore ' + fxNote(d.fx) + ' · max ' + MAX_UP + ' on the floor';
+    if (d.kind === 'up') return '×' + d.mult + ' ore value · max ' + MAX_UP + ' on the floor';
+    if (d.fxBonus) {
+      var bits = Object.keys(d.fxBonus).map(function (k) { return FX[k].name + ' ×' + d.fxBonus[k]; });
+      return 'Sells ore at ×' + d.mult + '. Effect bonus: ' + bits.join(', ');
+    }
+    return 'Sells ore at ×' + d.mult;
+  }
+  function isLocked(d) {
+    if (d.asc) return !(st.inv[d.id] > 0);
+    return !!d.core && !st.unlocked[d.id];
+  }
+  function costText(d) {
+    if (d.asc) return isLocked(d) ? 'Rebirth ' + d.grant : available(d.id) + ' left';
+    if (capped(d)) return 'Max ' + MAX_UP + '/' + MAX_UP;
+    return isLocked(d) ? d.core + (d.core === 1 ? ' core' : ' cores') : '$' + fmt(d.cost);
+  }
+
+  function makeRow(d) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'row'; b.id = 'row-' + d.id;
+    var cv = document.createElement('canvas'); cv.width = 88; cv.height = 88;
+    var mid = document.createElement('span');
+    mid.innerHTML = '<span class="rn"></span><span class="rs"></span>';
+    mid.firstChild.textContent = d.name; mid.lastChild.textContent = statLine(d);
+    if (d.rarity) {
+      var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = RAR_LABEL[d.rarity];
+      mid.firstChild.appendChild(tg);
+      b.style.setProperty('--rc', 'var(--r-' + d.rarity + ')');
+    }
+    var cost = document.createElement('span'); cost.className = 'rc';
+    b.appendChild(cv); b.appendChild(mid); b.appendChild(cost);
+    b.addEventListener('click', function () { onRow(d); });
+    rows[d.id] = b; iconCanvases[d.id] = cv; costEls[d.id] = cost;
+    return b;
+  }
+  /* Which groups are open is remembered per browser. It is only a convenience, so every read and write is guarded. */
+  var OPEN_KEY = 'deepbelt-open-groups';
+  function loadOpen() {
+    try { var v = JSON.parse(localStorage.getItem(OPEN_KEY)); if (v && typeof v === 'object') return v; } catch (e) {}
+    return null;
+  }
+  function saveOpen(v) { try { localStorage.setItem(OPEN_KEY, JSON.stringify(v)); } catch (e) {} }
+
+  function buildShop() {
+    var shop = document.getElementById('shop');
+    var openState = loadOpen() || { drill: true };   /* first visit: only Drills is open */
+    var dets = [];
+    var tools = document.createElement('div'); tools.className = 'gtools';
+    [['Open all', true], ['Close all', false]].forEach(function (t) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'btn mini'; b.textContent = t[0];
+      b.addEventListener('click', function () { dets.forEach(function (d) { d.open = t[1]; }); });
+      tools.appendChild(b);
+    });
+    shop.appendChild(tools);
+    GROUPS.forEach(function (g) {
+      var items = ITEMS.filter(function (d) { return grp(d) === g[1]; });
+      var det = document.createElement('details'); det.className = 'grp'; det.open = !!openState[g[1]];
+      var sum = document.createElement('summary'); sum.className = g[1] === 'asc' ? 'gh asc' : g[1] === 'core' ? 'gh core' : 'gh';
+      var nm = document.createElement('span'); nm.className = 'gname'; nm.textContent = g[0];
+      var cnt = document.createElement('span'); cnt.className = 'gcount'; cnt.textContent = String(items.length);
+      var chev = document.createElement('span'); chev.className = 'chev'; chev.setAttribute('aria-hidden', 'true');
+      sum.appendChild(nm); sum.appendChild(cnt); sum.appendChild(chev);
+      var list = document.createElement('div'); list.className = 'list';
+      if (g[1] === 'asc') { elAscNote = document.createElement('p'); elAscNote.className = 'gnote'; list.appendChild(elAscNote); }
+      items.forEach(function (d) { list.appendChild(makeRow(d)); });
+      det.appendChild(sum); det.appendChild(list);
+      det.addEventListener('toggle', function () { openState[g[1]] = det.open; saveOpen(openState); });
+      dets.push(det); shop.appendChild(det);
+    });
+  }
+  function drawIcons() {
+    ITEMS.forEach(function (d) {
+      var cv = iconCanvases[d.id];
+      if (!cv) return;
+      var c = cv.getContext('2d');
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, 88, 88);
+      if (d.shape) {
+        /* Shrink the tile size until the whole footprint fits the icon, then centre it. */
+        var b = shapeBox(d, 0), w = b.x1 - b.x0 + 1, h = b.y1 - b.y0 + 1, ts = 80 / Math.max(w, h);
+        drawBig(c, d, 0, 4 + (80 - w * ts) / 2 - b.x0 * ts, 4 + (80 - h * ts) / 2 - b.y0 * ts, ts, 0, 0);
+      } else drawItem(c, d, 0, 4, 4, 80, 0, 0);
+    });
+  }
+
+  function onRow(d) {
+    if (d.asc && isLocked(d)) { note(d.name + ' is the reward for rebirth ' + d.grant + '.'); return; }
+    if (isLocked(d)) {
+      if (spendable() < d.core) { note(d.name + ' needs ' + d.core + ' cores. You have ' + spendable() + ' to spend. Rebirth to earn more.'); return; }
+      if (armed === d.id) {
+        clearTimeout(armTimer); armed = null;
+        st.spent += d.core; st.unlocked[d.id] = true;
+        save(); selectItem(d);
+        note('Unlocked ' + d.name + '. It now stays unlocked through every rebirth.');
+        return;
+      }
+      armed = d.id; clearTimeout(armTimer);
+      armTimer = setTimeout(function () { armed = null; updateHint(); }, 4000);
+      note('Click ' + d.name + ' again to spend ' + d.core + (d.core === 1 ? ' core' : ' cores') + ' and unlock it for good.');
+      return;
+    }
+    selectItem(selected === d ? null : d);
+  }
+
+  function syncModes() {
+    document.getElementById('btnErase').setAttribute('aria-pressed', erase ? 'true' : 'false');
+    document.getElementById('btnLand').setAttribute('aria-pressed', landMode ? 'true' : 'false');
+    ITEMS.forEach(function (x) { rows[x.id].classList.toggle('sel', x === selected); });
+    updateHint();
+  }
+  function selectItem(d) { selected = d; if (d) { erase = false; landMode = false; } syncModes(); }
+  function setErase(on) { erase = on; if (on) { selected = null; landMode = false; } syncModes(); }
+  function setLand(on) { landMode = on; if (on) { selected = null; erase = false; } syncModes(); }
+  function updateHint() {
+    if (landMode) note('Buy land: click or drag over the outlined tiles next to your plot. Each tile costs more than the last.');
+    else if (erase) note('Remove mode. Click or drag over items to take them back at full price.');
+    else if (selected && selected.kind === 'bend') note('Placing Corner belt for $' + fmt(selected.cost) + '. It joins the two sides its curve touches. R turns it through all four corners, and clicking a placed corner does the same.');
+    else if (selected && selected.asc) note('Placing ' + selected.name + '. It costs nothing, but only fits on the glowing squares.');
+    else if (selected && selected.kind === 'tele') note('Placing ' + selected.name + '. Ore that enters any ' + selected.name + ' comes out of another one, heading the way its arrow points. Place at least two, and R turns the exit.');
+    else if (selected && selected.shape) note('Placing ' + selected.name + ' for $' + fmt(selected.cost) + '. It covers ' + selected.shape.length + ' tiles. The bright tile is the head' + (selected.kind === 'drill' ? ', where ore leaves' : '') + '. Click once to build, R swings the shape around the head.');
+    else if (selected) note('Placing ' + selected.name + ' for $' + fmt(selected.cost) + '. Click or drag to build, R to turn.');
+    else note('A starter line is running. Pick an item from the catalogue, or click a placed item to turn it. Buy land to grow.');
+  }
+
+  document.getElementById('btnRot').addEventListener('click', function () { dirNew = (dirNew + 1) % 4; });
+  document.getElementById('btnLand').addEventListener('click', function () { setLand(!landMode); });
+  document.getElementById('btnErase').addEventListener('click', function () { setErase(!erase); });
+  document.getElementById('btnDesel').addEventListener('click', function () { erase = false; landMode = false; selectItem(null); });
+  window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var k = e.key.toLowerCase();
+    if (k === 'r') dirNew = (dirNew + 1) % 4;
+    else if (k === 'x') setErase(!erase);
+    else if (k === 'l') setLand(!landMode);
+    else if (k === 'escape') { erase = false; landMode = false; selectItem(null); }
+  });
+
+  /* ---------- rebirth and reset ---------- */
+  function rebirthNeed() { return REBIRTH_BASE * Math.pow(REBIRTH_GROWTH, st.rebirths); }
+  function rebirthGain() {
+    if (st.rebirths >= MAX_REBIRTHS) return 0;
+    var need = rebirthNeed();
+    return st.run >= need ? 1 : 0;   // flat: one core per life, however far past the target you got
+  }
+  function twoStep(btn, label, confirmLabel, action) {
+    var t = null;
+    btn.addEventListener('click', function () {
+      if (btn.dataset.armed) { clearTimeout(t); delete btn.dataset.armed; action(); btn.textContent = label(); }
+      else {
+        btn.dataset.armed = '1'; btn.textContent = confirmLabel;
+        t = setTimeout(function () { delete btn.dataset.armed; btn.textContent = label(); }, 4000);
+      }
+    });
+  }
+  var btnRebirth = document.getElementById('btnRebirth');
+  var btnReset = document.getElementById('btnReset');
+  function rebirthLabel() {
+    if (st.rebirths >= MAX_REBIRTHS) return 'All ' + MAX_REBIRTHS + ' rebirths done';
+    var g = rebirthGain();
+    return g ? 'Rebirth for +' + g + (g === 1 ? ' core' : ' cores') : 'Earn $' + fmt(rebirthNeed()) + ' to rebirth';
+  }
+  twoStep(btnRebirth, rebirthLabel, 'Press again to confirm', function () {
+    var g = rebirthGain();
+    if (g < 1) return;
+    st.cores += g; st.rebirths += 1; st.cash = 40; st.run = 0; st.energy = BASE_CAP;
+    grantNext();
+    resetFloor(); save();
+    var reward = BY_ID[ASC_ORDER[st.asc.length - 1]];
+    if (reward) note('Rebirth reward: ' + reward.name + ', plus a new glowing square to place it on.');
+  });
+  twoStep(btnReset, function () { return 'Reset save'; }, 'Press again to erase everything', function () {
+    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = [];
+    if (selected && (selected.core || selected.asc)) selectItem(null);
+    resetFloor(); save();
+  });
+
+  /* ---------- UI refresh ---------- */
+  var elCash = document.getElementById('cash'), elInc = document.getElementById('inc'), elCores = document.getElementById('cores');
+  var elRun = document.getElementById('run'), elGain = document.getElementById('gain'), elSpend = document.getElementById('spend');
+  var elLife = document.getElementById('life'), elNeed = document.getElementById('need');
+  var elLand = document.getElementById('land');
+  var elPow = document.getElementById('pow'), elPowLabel = document.getElementById('powLabel');
+  var uiT = 0, incT = 0, themeT = 0, saveT = 0;
+  function ui(dt) {
+    uiT += dt; incT += dt; themeT += dt; saveT += dt;
+    if (incT >= 0.5) { inc = inc * 0.8 + (earnedAcc / incT) * 0.2; earnedAcc = 0; incT = 0; }
+    if (themeT >= 1) { themeT = 0; readTheme(); }
+    if (saveT >= 5) { saveT = 0; save(); }
+    if (uiT < 0.12) return;
+    uiT = 0;
+    elCash.textContent = '$' + fmt(Math.floor(st.cash));
+    elInc.textContent = '$' + fmt(inc) + '/s';
+    elLand.textContent = ownedCount >= N ? 'All ' + N + ' tiles' : ownedCount + ' tiles';
+    document.getElementById('landLabel').textContent = ownedCount >= N ? 'Land' : 'Land · next $' + fmt(landCost());
+    elPow.textContent = fmt(Math.floor(st.energy)) + ' / ' + fmt(capNow) + (effS < 0.97 ? ' · ' + Math.round(effS * 100) + '%' : '');
+    elPow.classList.toggle('low', effS < 0.97);
+    elPowLabel.textContent = 'Power · uses ' + fmt(demandNow) + '/s' + (brokenCount ? ' · ' + brokenCount + ' broken' : '') + (weakCount ? ' · ' + weakCount + ' at 50%' : '');
+    elCores.textContent = String(spendable());
+    elRun.textContent = '$' + fmt(Math.floor(st.run));
+    var done = st.rebirths >= MAX_REBIRTHS;
+    elLife.textContent = done ? 'Complete' : (st.rebirths + 1) + ' of ' + MAX_REBIRTHS;
+    if (elAscNote) elAscNote.textContent = 'One reward per rebirth, and one new random square each time. They only fit on the glowing squares. Squares so far: ' + st.asc.length + '.';
+    elNeed.textContent = done ? '—' : '$' + fmt(rebirthNeed());
+    var g = rebirthGain();
+    elGain.textContent = String(g);
+    elSpend.textContent = String(spendable());
+    btnRebirth.disabled = g < 1;
+    if (!btnRebirth.dataset.armed) btnRebirth.textContent = rebirthLabel();
+    ITEMS.forEach(function (d) {
+      var locked = isLocked(d);
+      costEls[d.id].textContent = costText(d);
+      costEls[d.id].classList.toggle('locked', locked);
+      var poor = d.asc ? (locked || available(d.id) < 1) : locked ? spendable() < d.core : (st.cash < d.cost || capped(d));
+      rows[d.id].classList.toggle('poor', poor);
+    });
+  }
+
+  /* ---------- boot ---------- */
+  buildShop();
+  if (!load()) { resetLand(); starter(); }
+  readTheme();
+  resize();
+  syncModes();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { drawIcons(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) save(); });
+  window.addEventListener('pagehide', save);
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    tick(dt); draw(); ui(dt);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
