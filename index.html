@@ -179,7 +179,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var PLOT = { x0: 7, x1: 13, y0: 5, y1: 7 };
   var START_TILES = (PLOT.x1 - PLOT.x0 + 1) * (PLOT.y1 - PLOT.y0 + 1);
   var LAND_BASE = 500, LAND_GROWTH = 1.06;
-  var REBIRTH_BASE = 50000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 20, BASE_CAP = 100, BREAK_AFTER = 8;
+  var REBIRTH_BASE = 500000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 20, BASE_CAP = 100, BREAK_AFTER = 8;
 
   /* Footprints. Each is a list of [dx, dy] tile offsets seen from the item's own point of view while it faces right (direction 0).
      [0, 0] is always the "head" tile: the one that carries the picture, and for drills the one ore leaves from.
@@ -462,7 +462,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     return BELT_KINDS[d.kind] ? 'belt' : d.kind;
   }
 
-  var SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+  var SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc', 'UDc', 'DDc', 'TDc'];
   function fmt(n) {
     if (n < 1000) return n < 10 ? String(Math.round(n * 10) / 10) : String(Math.round(n));
     var e = Math.min(Math.floor(Math.log10(n) / 3), SUF.length - 1);
