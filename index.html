@@ -152,13 +152,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     </section>
     <aside class="panel" aria-label="Catalogue">
       <div class="rebirth">
-        <div class="line"><span>Life</span><b id="life">1 of 10</b></div>
+        <div class="line"><span>Life</span><b id="life">1 of 20</b></div>
         <div class="line"><span>Next rebirth needs</span><b id="need">$50Qa</b></div>
         <div class="line"><span>Earned this run</span><b id="run">$0</b></div>
         <div class="line"><span>Cores if you rebirth</span><b id="gain">0</b></div>
         <div class="line"><span>Cores to spend</span><b id="spend">0</b></div>
         <button class="btn primary" id="btnRebirth" type="button">Rebirth</button>
-        <p>You get 10 rebirths, and each one needs 10 times more than the last. Each also gives you one Ascended item and one new square to place it on. Rebirth clears your cash, floor and land. Each rebirth also gives you exactly 1 core, which you can spend on Core tech below.</p>
+        <p>You get 20 rebirths, and each one needs 10 times more than the last. Each also gives you one Ascended item and one new square to place it on. Rebirth clears your cash, floor and land. Each rebirth also gives you exactly 1 core, which you can spend on Core tech below.</p>
       </div>
       <div id="shop"></div>
       <div class="foot">
@@ -179,7 +179,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var PLOT = { x0: 7, x1: 13, y0: 5, y1: 7 };
   var START_TILES = (PLOT.x1 - PLOT.x0 + 1) * (PLOT.y1 - PLOT.y0 + 1);
   var LAND_BASE = 500, LAND_GROWTH = 1.06;
-  var REBIRTH_BASE = 50000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 10, BASE_CAP = 100, BREAK_AFTER = 8;
+  var REBIRTH_BASE = 50000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 20, BASE_CAP = 100, BREAK_AFTER = 8;
 
   /* Footprints. Each is a list of [dx, dy] tile offsets seen from the item's own point of view while it faces right (direction 0).
      [0, 0] is always the "head" tile: the one that carries the picture, and for drills the one ore leaves from.
@@ -196,26 +196,54 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     block2: [[0, 0], [1, 0], [0, 1], [1, 1]],
     arrow: [[0, 0], [-1, 0], [-2, 0], [-1, 1], [-1, -1]],
     plus: [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]],
-    wide3: [[0, 0], [0, 1], [0, -1]]
+    wide3: [[0, 0], [0, 1], [0, -1]],
+    long4: [[0, 0], [-1, 0], [-2, 0], [-3, 0]],
+    zig: [[0, 0], [-1, 0], [-1, 1], [-2, 1]],
+    wing: [[0, 0], [-1, 0], [-1, 1], [-1, -1], [-2, 1], [-2, -1]],
+    big3: [[0, 0], [-1, 0], [-2, 0], [0, 1], [-1, 1], [-2, 1], [0, -1], [-1, -1], [-2, -1]],
+    ell: [[0, 0], [1, 0], [0, 1], [0, 2]],
+    zag: [[0, 0], [1, 0], [1, 1], [2, 1]]
   };
 
   /* Ore status effects. An ore carries at most one (`ore.fx`), and the last effect it touched wins.
      Effect belts and upgraders set it. Some furnaces pay extra for a matching effect (see `fxBonus`). */
   var FX = {
-    fire: { name: 'Burning', color: '#ff6a2b', ttl: 6 },
-    frost: { name: 'Frozen', color: '#7fd8ff', ttl: 10 },
-    shock: { name: 'Charged', color: '#ffe14a', ttl: 4 },
-    gold: { name: 'Gilded', color: '#f5c542' }
+    fire:    { name: 'Burning',    color: '#ff6a2b', ttl: 6,  aura: 'flame' },
+    frost:   { name: 'Frozen',     color: '#7fd8ff', ttl: 10, aura: 'ring' },
+    shock:   { name: 'Charged',    color: '#ffe14a', ttl: 4,  aura: 'spark' },
+    gold:    { name: 'Gilded',     color: '#f5c542',           aura: 'ring' },
+    rad:     { name: 'Irradiated', color: '#3dff6a', ttl: 8,  aura: 'pulse',  note: 'grows 8% a second and spreads to bare ore it touches' },
+    quantum: { name: 'Superposed', color: '#c77dff', ttl: 12, aura: 'ghost',  note: 'sells for ×8 or ×0.1, a coin flip' },
+    chrono:  { name: 'Time-warped', color: '#2ee6d6', ttl: 8, aura: 'trail',  note: 'travels 1.8 times faster' },
+    mito:    { name: 'Dividing',   color: '#ffffff', ttl: 6,  aura: 'cell',   note: 'marks the halves of a split' },
+    plasma:  { name: 'Plasma',     color: '#ff2d95', ttl: 5,  aura: 'orbit',  note: 'only furnaces that want plasma pay for it' },
+    void:    { name: 'Voided',     color: '#7a5cff', ttl: 10, aura: 'abyss',  note: 'only furnaces that want void pay for it' },
+    acid:    { name: 'Corroded',   color: '#d6e600', ttl: 8,  aura: 'drip',   note: 'loses 5% of its value a second' }
   };
   /* `ttl` is how many seconds an effect lasts after the ore last touched whatever made it (no ttl = permanent).
-     An effect belt refreshes the timer on every frame the ore is on it, so the clock only starts when the ore leaves. */
+     An effect belt refreshes the timer on every frame the ore is on it, so the clock only starts when the ore leaves.
+     `aura` is the way the effect is drawn around the ore (see drawAura). `note` is what it does beyond paying more. */
   function setFx(o, key) { o.fx = key; o.fxT = FX[key].ttl || Infinity; }
-  function fxNote(key) { return FX[key].name + (FX[key].ttl ? ' for ' + FX[key].ttl + 's' : ''); }
+  function fxNote(key) { var F = FX[key]; return F.name + (F.ttl ? ' for ' + F.ttl + 's' : '') + (F.note ? ' (' + F.note + ')' : ''); }
+
+  /* Ore body shapes. `ore.sh` is null for the usual round ore. Upgraders and drills can cut ore into a shape,
+     and some furnaces and sorters care which shape comes in. */
+  var SHAPES = { sq: 'cube', tri: 'triangle', dia: 'diamond', hex: 'hexagon', star: 'star' };
 
   var ITEMS = [
     { id: 'belt0', kind: 'belt', name: 'Belt', cost: 3, speed: 2, color: '#3a4644' },
     { id: 'belt1', kind: 'belt', name: 'Fast belt', cost: 40, speed: 4, color: '#3a4644' },
     { id: 'bend', kind: 'bend', name: 'Corner belt', cost: 5, speed: 2, color: '#3a4644' },
+    { id: 'bcross', kind: 'cross', name: 'Crossroad', cost: 90, speed: 3, color: '#3a4644' },
+    { id: 'btri', kind: 'belt', name: 'Triple belt', cost: 150, speed: 3, color: '#3a4644', shape: SH.wide3, eachTile: true },
+    { id: 'bspin', kind: 'spin', name: 'Spinner', cost: 700, speed: 2, color: '#3a4644' },
+    { id: 'btun0', kind: 'tunnel', name: 'Underpass', cost: 2500, speed: 3, range: 4, color: '#c9a36a' },
+    { id: 'bstasis', kind: 'belt', name: 'Stasis belt', cost: 8000, speed: 1.5, stasis: true, color: '#7fd8ff' },
+    { id: 'bsortfx', kind: 'sorter', name: 'Effect sorter', cost: 20000, speed: 3, by: 'fx', color: '#ffb34a' },
+    { id: 'bsortsh', kind: 'sorter', name: 'Shape sorter', cost: 20000, speed: 3, by: 'sh', color: '#9adf6a' },
+    { id: 'bfan', kind: 'split', name: 'Fan splitter', cost: 45000, speed: 2, color: '#3a4644', shape: SH.wide3, eachTile: true },
+    { id: 'btun1', kind: 'tunnel', name: 'Deep tunnel', cost: 90000, speed: 3, range: 12, color: '#6aa8d8' },
+    { id: 'bmaglev', kind: 'belt', name: 'Maglev rail', cost: 600000, speed: 30, color: '#3a4644', shape: SH.long3, eachTile: true },
 
     { id: 'drill0', kind: 'drill', name: 'Rust drill', cost: 25, value: 1, interval: 1.6, color: '#b5532b' },
     { id: 'drill1', kind: 'drill', name: 'Tin drill', cost: 180, value: 4, interval: 1.4, color: '#7f9aa6' },
@@ -233,6 +261,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'drill13', kind: 'drill', name: 'Painite trident', cost: 4e13, value: 875000000, interval: 0.55, color: '#e2552a', shape: SH.tee },
     { id: 'drill14', kind: 'drill', name: 'Starfall excavator', cost: 4e14, value: 4400000000, interval: 0.5, color: '#f2c94c', shape: SH.block },
     { id: 'drill15', kind: 'drill', name: 'Worldeater', cost: 4e15, value: 22000000000, interval: 0.45, color: '#7c4dff', shape: SH.arrow },
+    { id: 'drill16', kind: 'drill', name: 'Ionic bore', cost: 4e16, value: 1.1e11, interval: 0.42, color: '#ffd54a', shape: SH.zig, fx: 'shock', oreSh: 'tri' },
+    { id: 'drill17', kind: 'drill', name: 'Cryo borer', cost: 4e17, value: 5.5e11, interval: 0.4, color: '#7fd8ff', shape: SH.long3, fx: 'frost', oreSh: 'dia' },
+    { id: 'drill18', kind: 'drill', name: 'Reactor bore', cost: 4e18, value: 2.75e12, interval: 0.38, color: '#3dff6a', shape: SH.wing, fx: 'rad' },
+    { id: 'drill19', kind: 'drill', name: 'Hex miner', cost: 4e19, value: 1.4e13, interval: 0.36, color: '#e0a84a', shape: SH.big3, oreSh: 'hex' },
+    { id: 'drill20', kind: 'drill', name: 'Lattice rig', cost: 4e20, value: 6.9e13, interval: 0.34, color: '#6a8cff', shape: SH.long4, oreSh: 'sq' },
+    { id: 'drill21', kind: 'drill', name: 'Starforge drill', cost: 4e21, value: 3.4e14, interval: 0.32, color: '#ffd24a', shape: SH.arrow, fx: 'gold', oreSh: 'star' },
+    { id: 'drill22', kind: 'drill', name: 'Chrono borer', cost: 4e22, value: 1.7e15, interval: 0.3, color: '#2ee6d6', shape: SH.zig, fx: 'chrono' },
+    { id: 'drill23', kind: 'drill', name: 'Maelstrom drill', cost: 4e23, value: 8.6e15, interval: 0.28, color: '#ff2d95', shape: SH.big3, fx: 'plasma' },
+    { id: 'drill24', kind: 'drill', name: 'Abyss borer', cost: 4e24, value: 4.3e16, interval: 0.26, color: '#7a5cff', shape: SH.wing, fx: 'void' },
+    { id: 'drill25', kind: 'drill', name: 'Genesis engine', cost: 4e25, value: 2.1e17, interval: 0.24, color: '#f3ece6', shape: SH.tee, fx: 'quantum', oreSh: 'star' },
 
     { id: 'coal0', kind: 'drill', coal: true, name: 'Coal drill', cost: 150, value: 2, interval: 1.2, color: '#3a3f41' },
     { id: 'coal1', kind: 'drill', coal: true, name: 'Coal rig', cost: 15000, value: 14, interval: 1.0, color: '#2f3436' },
@@ -244,6 +282,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'conv1', kind: 'conv', name: 'Tesla coil', cost: 5e6, rate: 2, color: '#f0b429', shape: SH.ahead2 },
     { id: 'bat1', kind: 'bat', name: 'Capacitor bank', cost: 60000, cap: 6000, color: '#46c37b', shape: SH.wide2 },
     { id: 'bat2', kind: 'bat', name: 'Grid vault', cost: 2e7, cap: 80000, color: '#46c37b', shape: SH.block2 },
+    { id: 'coal5', kind: 'drill', coal: true, name: 'Pitch engine', cost: 2e12, value: 24000, interval: 0.6, color: '#14181a', shape: SH.long2 },
+    { id: 'coal6', kind: 'drill', coal: true, name: 'Deepseam borer', cost: 2e13, value: 96000, interval: 0.55, color: '#101416', shape: SH.elbow },
+    { id: 'coal7', kind: 'drill', coal: true, name: 'Magma tap', cost: 2e14, value: 380000, interval: 0.5, color: '#2a1612', shape: SH.block },
+    { id: 'coal8', kind: 'drill', coal: true, name: 'Core tap', cost: 2e15, value: 1500000, interval: 0.45, color: '#3a1a10', shape: SH.tee },
+    { id: 'conv2', kind: 'conv', name: 'Fusion stack', cost: 4e9, rate: 5, color: '#f0b429', shape: SH.wide3 },
+    { id: 'conv3', kind: 'conv', name: 'Dyson loop', cost: 6e12, rate: 12, color: '#ffd36b', shape: SH.plus },
+    { id: 'conv4', kind: 'conv', name: 'Zero-point tap', cost: 8e15, rate: 30, color: '#fff2a8', shape: SH.big3 },
+    { id: 'bat3', kind: 'bat', name: 'Flux cell', cost: 2e9, cap: 500000, color: '#46c37b', shape: SH.long3 },
+    { id: 'bat4', kind: 'bat', name: 'Plasma bank', cost: 4e11, cap: 8000000, color: '#46c37b', shape: SH.block },
+    { id: 'bat5', kind: 'bat', name: 'Singularity vault', cost: 8e14, cap: 200000000, color: '#46c37b', shape: SH.plus },
 
     { id: 'up0', kind: 'up', name: 'Wash basin', cost: 60, mult: 1.5, color: '#2e9ec4' },
     { id: 'up1', kind: 'up', name: 'Crusher', cost: 400, mult: 2, color: '#d19a1f' },
@@ -259,6 +307,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'up11', kind: 'up', name: 'Event coil', cost: 4e12, mult: 20, color: '#ff6b6b', shape: SH.wide2 },
     { id: 'up12', kind: 'up', name: 'Cosmic lens', cost: 4e13, mult: 25, color: '#34d1b0', shape: SH.block },
     { id: 'up13', kind: 'up', name: 'Omega engine', cost: 4e14, mult: 35, color: '#ffb347', shape: SH.tee },
+    { id: 'up14', kind: 'up', name: 'Isotope injector', cost: 2e15, mult: 40, fx: 'rad', color: '#3dff6a', shape: SH.long2 },
+    { id: 'up15', kind: 'up', name: 'Schrödinger box', cost: 4e15, mult: 45, fx: 'quantum', color: '#c77dff', shape: SH.block },
+    { id: 'up16', kind: 'up', name: 'Chrono coil', cost: 8e15, mult: 50, fx: 'chrono', color: '#2ee6d6', shape: SH.wide2 },
+    { id: 'up17', kind: 'up', name: 'Mitosis vat', cost: 1.6e16, mult: 30, mitosis: true, fx: 'mito', color: '#f3ece6', shape: SH.tee },
+    { id: 'up18', kind: 'up', name: 'Plasma torch', cost: 3.2e16, mult: 60, fx: 'plasma', color: '#ff2d95', shape: SH.long3 },
+    { id: 'up19', kind: 'up', name: 'Void maw', cost: 6.4e16, mult: 70, fx: 'void', color: '#7a5cff', shape: SH.block2 },
+    { id: 'up20', kind: 'up', name: 'Acid bath', cost: 1.3e17, mult: 55, fx: 'acid', color: '#d6e600', shape: SH.elbow },
+    { id: 'up21', kind: 'up', name: 'Cube press', cost: 2.6e17, mult: 80, oreSh: 'sq', color: '#e0a84a', shape: SH.block },
+    { id: 'up22', kind: 'up', name: 'Star forge', cost: 5e17, mult: 100, oreSh: 'star', color: '#ffd24a', shape: SH.plus },
+    { id: 'up23', kind: 'up', name: 'Diamond cutter', cost: 1e18, mult: 120, oreSh: 'dia', color: '#7fd6e8', shape: SH.arrow },
 
     { id: 'fur0', kind: 'fur', name: 'Kiln', cost: 10, mult: 1, color: '#c8773a' },
     { id: 'fur1', kind: 'fur', name: 'Forge', cost: 2500, mult: 2, color: '#e0561f' },
@@ -271,6 +329,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'fur8', kind: 'fur', name: 'Magnetar forge', cost: 2e13, mult: 150, color: '#6bd1ff', shape: SH.line3 },
     { id: 'fur9', kind: 'fur', name: 'Eventide foundry', cost: 5e14, mult: 210, color: '#b48cff', shape: SH.block2 },
     { id: 'fur10', kind: 'fur', name: 'Genesis crucible', cost: 1.2e16, mult: 300, color: '#fff2a8', shape: SH.plus },
+    { id: 'fur11', kind: 'fur', name: 'Isotope furnace', cost: 2e16, mult: 250, likes: 'rad', fxBonus: { rad: 12 }, color: '#3dff6a', shape: SH.ell },
+    { id: 'fur12', kind: 'fur', name: 'Observer furnace', cost: 4e16, mult: 300, likes: 'quantum', qP: 0.8, color: '#c77dff', shape: SH.tee },
+    { id: 'fur13', kind: 'fur', name: 'Plasma furnace', cost: 8e16, mult: 260, likes: 'plasma', fxBonus: { plasma: 12 }, color: '#ff2d95', shape: SH.zag },
+    { id: 'fur14', kind: 'fur', name: 'Abyss furnace', cost: 1.6e17, mult: 220, likes: 'void', fxBonus: { void: 25 }, color: '#7a5cff', shape: SH.big3 },
+    { id: 'fur15', kind: 'fur', name: 'Acid vat furnace', cost: 3.2e17, mult: 240, likes: 'acid', fxBonus: { acid: 15 }, color: '#d6e600', shape: SH.wide3 },
+    { id: 'fur16', kind: 'fur', name: 'Sprint kiln', cost: 6.4e17, mult: 350, likes: 'chrono', fxBonus: { chrono: 8 }, color: '#2ee6d6', shape: SH.long4 },
+    { id: 'fur17', kind: 'fur', name: 'Brood furnace', cost: 1.3e18, mult: 330, likes: 'mito', fxBonus: { mito: 6 }, color: '#f3ece6', shape: SH.block2 },
+    { id: 'fur18', kind: 'fur', name: 'Cube crate', cost: 2.6e18, mult: 300, likesSh: 'sq', shapeBonus: { sq: 10 }, color: '#e0a84a', shape: SH.block },
+    { id: 'fur19', kind: 'fur', name: 'Star shrine', cost: 5e18, mult: 320, likesSh: 'star', shapeBonus: { star: 14 }, color: '#ffd24a', shape: SH.plus },
+    { id: 'fur20', kind: 'fur', name: 'Diamond vault', cost: 1e19, mult: 340, likesSh: 'dia', shapeBonus: { dia: 12 }, color: '#7fd6e8', shape: SH.arrow },
 
     { id: 'cbelt', kind: 'belt', core: 1, name: 'Hyperbelt', cost: 500, speed: 8, color: '#3a4644' },
     { id: 'csplit', kind: 'split', core: 1, name: 'Splitter', cost: 5000, speed: 2, color: '#3a4644' },
@@ -306,7 +374,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'asc_f2', kind: 'fur', asc: true, grant: 7, name: 'Zenith forge', cost: 0, mult: 400, color: '#4aa3ff' },
     { id: 'asc_d3', kind: 'drill', asc: true, grant: 8, name: 'Apex drill', cost: 0, value: 20000000000, interval: 0.3, color: '#8a7cff' },
     { id: 'asc_u3', kind: 'up', asc: true, grant: 9, name: 'Apex crown', cost: 0, mult: 1500, color: '#8a7cff' },
-    { id: 'asc_f3', kind: 'fur', asc: true, grant: 10, name: 'Apex crucible', cost: 0, mult: 1000, color: '#8a7cff' }
+    { id: 'asc_f3', kind: 'fur', asc: true, grant: 10, name: 'Apex crucible', cost: 0, mult: 1000, color: '#8a7cff' },
+    { id: 'asc_d4', kind: 'drill', asc: true, grant: 11, name: 'Eclipse drill', cost: 0, value: 5e11, interval: 0.25, color: '#ff5ec4' },
+    { id: 'asc_u4', kind: 'up', asc: true, grant: 12, name: 'Nova loom', cost: 0, mult: 5000, color: '#ff5ec4' },
+    { id: 'asc_f4', kind: 'fur', asc: true, grant: 13, name: 'Pulsar crucible', cost: 0, mult: 4000, color: '#ff5ec4' },
+    { id: 'asc_s2', kind: 'split', asc: true, grant: 14, name: 'Chaos splitter', cost: 0, mult: 800, speed: 2, color: '#3a4644' },
+    { id: 'asc_d5', kind: 'drill', asc: true, grant: 15, name: 'Genesis drill', cost: 0, value: 5e12, interval: 0.2, fx: 'rad', color: '#5effb0' },
+    { id: 'asc_u5', kind: 'up', asc: true, grant: 16, name: 'Paradox lens', cost: 0, mult: 15000, fx: 'quantum', color: '#5effb0' },
+    { id: 'asc_f5', kind: 'fur', asc: true, grant: 17, name: 'Omega forge', cost: 0, mult: 10000, color: '#5effb0' },
+    { id: 'asc_d6', kind: 'drill', asc: true, grant: 18, name: 'Aeon drill', cost: 0, value: 5e13, interval: 0.15, color: '#ffd24a' },
+    { id: 'asc_u6', kind: 'up', asc: true, grant: 19, name: 'Infinity crown', cost: 0, mult: 40000, color: '#ffd24a' },
+    { id: 'asc_f6', kind: 'fur', asc: true, grant: 20, name: 'Cosmic crucible', cost: 0, mult: 25000, color: '#ffd24a' }
   ];
   var BY_ID = {};
   ITEMS.forEach(function (d) { BY_ID[d.id] = d; });
@@ -329,7 +407,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     up9: 50, up10: 80, up11: 120, up12: 180, up13: 260,
     fur6: 60, fur7: 90, fur8: 130, fur9: 190, fur10: 280,
     cember: 0.1, cfrost: 0.1, clight: 0.4, ctele0: 10, ctele1: 25, ctele2: 50,
-    cflare: 40, ccryo: 40, carc: 40, cmidas: 100, creson: 70, csub: 60, cblast: 60, cstorm: 60, cvault: 120
+    cflare: 40, ccryo: 40, carc: 40, cmidas: 100, creson: 70, csub: 60, cblast: 60, cstorm: 60, cvault: 120,
+    bcross: 0.02, btri: 0.05, bspin: 0.05, btun0: 0.1, bstasis: 0.15, bsortfx: 0.3, bsortsh: 0.3, bfan: 0.3, btun1: 0.6, bmaglev: 1.5,
+    drill16: 700, drill17: 950, drill18: 1300, drill19: 1800, drill20: 2500, drill21: 3500, drill22: 5000, drill23: 7000, drill24: 10000, drill25: 14000,
+    up14: 350, up15: 420, up16: 500, up17: 600, up18: 750, up19: 900, up20: 1100, up21: 1400, up22: 1800, up23: 2300,
+    fur11: 320, fur12: 380, fur13: 450, fur14: 540, fur15: 650, fur16: 780, fur17: 940, fur18: 1100, fur19: 1350, fur20: 1700,
+    asc_d4: 3500, asc_u4: 1200, asc_f4: 1200, asc_s2: 400, asc_d5: 6000, asc_u5: 2500, asc_f5: 2500, asc_d6: 12000, asc_u6: 5000, asc_f6: 5000
   };
   ITEMS.forEach(function (d) { d.draw = DRAW[d.id] || 0; });
 
@@ -350,7 +433,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     up6: 'legendary', up7: 'legendary', up8: 'mythic', cdup: 'legendary',
     fur0: 'common', fur1: 'uncommon', fur2: 'rare', fur3: 'epic', fur4: 'legendary', fur5: 'mythic', cfur: 'mythic',
     asc_d1: 'ascended', asc_u1: 'ascended', asc_f1: 'ascended', asc_s1: 'ascended', asc_d2: 'ascended',
-    asc_u2: 'ascended', asc_f2: 'ascended', asc_d3: 'ascended', asc_u3: 'ascended', asc_f3: 'ascended'
+    asc_u2: 'ascended', asc_f2: 'ascended', asc_d3: 'ascended', asc_u3: 'ascended', asc_f3: 'ascended',
+    asc_d4: 'ascended', asc_u4: 'ascended', asc_f4: 'ascended', asc_s2: 'ascended', asc_d5: 'ascended',
+    asc_u5: 'ascended', asc_f5: 'ascended', asc_d6: 'ascended', asc_u6: 'ascended', asc_f6: 'ascended',
+    bstasis: 'rare', bsortfx: 'rare', bsortsh: 'rare', bfan: 'rare', btun1: 'epic', bmaglev: 'epic', btun0: 'uncommon',
+    drill16: 'divine', drill17: 'divine', drill18: 'divine', drill19: 'divine', drill20: 'divine',
+    drill21: 'divine', drill22: 'divine', drill23: 'divine', drill24: 'divine', drill25: 'divine',
+    coal5: 'epic', coal6: 'legendary', coal7: 'legendary', coal8: 'mythic', conv2: 'rare', conv3: 'epic', conv4: 'legendary',
+    bat3: 'rare', bat4: 'epic', bat5: 'legendary',
+    up14: 'divine', up15: 'divine', up16: 'divine', up17: 'divine', up18: 'divine', up19: 'divine', up20: 'divine', up21: 'divine', up22: 'divine', up23: 'divine',
+    fur11: 'divine', fur12: 'divine', fur13: 'divine', fur14: 'divine', fur15: 'divine', fur16: 'divine', fur17: 'divine', fur18: 'divine', fur19: 'divine', fur20: 'divine'
   };
   ITEMS.forEach(function (d) { d.rarity = RARITY[d.id] || null; });
 
@@ -360,13 +452,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     .map(function (d) { return d.id; });
 
   /* A shaped item can be turned even if it is a furnace or battery, because turning swings its footprint. */
-  function directional(def) { return !!def.shape || (def.kind !== 'fur' && def.kind !== 'conv' && def.kind !== 'bat'); }
+  function directional(def) { return !!def.shape || (def.kind !== 'fur' && def.kind !== 'conv' && def.kind !== 'bat' && def.kind !== 'cross' && def.kind !== 'spin'); }
+  /* Everything that moves ore along sits in the Belts group of the shop. */
+  var BELT_KINDS = { belt: 1, bend: 1, cross: 1, spin: 1, sorter: 1, tunnel: 1, split: 1 };
   function grp(d) {
     if (d.asc) return 'asc';
     if (d.core) return 'core';
-    if (d.kind === 'bend') return 'belt';
     if (d.coal || d.kind === 'conv' || d.kind === 'bat') return 'power';
-    return d.kind;
+    return BELT_KINDS[d.kind] ? 'belt' : d.kind;
   }
 
   var SUF = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
@@ -583,15 +676,56 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     c.restore();
   }
 
-  function drawItem(c, def, dir, px, py, s, tt, pulse) {
+  function drawItem(c, def, dir, px, py, s, tt, pulse, bare) {
     c.save();
     c.translate(px + s / 2, py + s / 2);
     if (def.kind === 'belt') {
       rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
       c.fillStyle = T.belt; c.fill();
       c.rotate(dir * Math.PI / 2);
-      c.strokeStyle = def.fx ? FX[def.fx].color : def.speed >= 4 ? T.accent : T['belt-mark'];
-      chevrons(c, s, def.speed, tt);
+      c.strokeStyle = def.fx ? FX[def.fx].color : def.stasis ? '#7fd8ff' : def.speed >= 4 ? T.accent : T['belt-mark'];
+      chevrons(c, s, Math.min(def.speed, 10), tt);
+      if (def.stasis) {   /* pause bars: ore keeps its effect timers frozen while it rides this belt */
+        c.fillStyle = '#7fd8ff'; c.globalAlpha = 0.9;
+        c.fillRect(-s * 0.11, -s * 0.2, s * 0.07, s * 0.4); c.fillRect(s * 0.04, -s * 0.2, s * 0.07, s * 0.4);
+        c.globalAlpha = 1;
+      }
+    } else if (def.kind === 'cross') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.strokeStyle = T['belt-mark']; c.fillStyle = T['belt-mark']; c.lineWidth = Math.max(2, s * 0.07); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(-s * 0.34, 0); c.lineTo(s * 0.34, 0); c.moveTo(0, -s * 0.34); c.lineTo(0, s * 0.34); c.stroke();
+      for (var q4 = 0; q4 < 4; q4++) { c.save(); c.rotate(q4 * Math.PI / 2); c.beginPath(); c.moveTo(s * 0.44, 0); c.lineTo(s * 0.3, -s * 0.09); c.lineTo(s * 0.3, s * 0.09); c.closePath(); c.fill(); c.restore(); }
+    } else if (def.kind === 'spin') {
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.rotate(tt * 1.4);
+      c.strokeStyle = T.accent; c.fillStyle = T.accent; c.lineWidth = Math.max(2, s * 0.08); c.lineCap = 'round';
+      c.beginPath(); c.arc(0, 0, s * 0.27, 0.35, Math.PI * 1.75); c.stroke();
+      c.save(); c.rotate(Math.PI * 1.75);
+      c.beginPath(); c.moveTo(s * 0.27, s * 0.16); c.lineTo(s * 0.39, -s * 0.02); c.lineTo(s * 0.15, -s * 0.02); c.closePath(); c.fill(); c.restore();
+    } else if (def.kind === 'tunnel') {
+      c.rotate(dir * Math.PI / 2);
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.fillStyle = '#0b100f';
+      c.beginPath(); c.moveTo(-s * 0.3, -s * 0.34); c.lineTo(s * 0.12, -s * 0.34); c.quadraticCurveTo(s * 0.4, -s * 0.34, s * 0.4, 0);
+      c.quadraticCurveTo(s * 0.4, s * 0.34, s * 0.12, s * 0.34); c.lineTo(-s * 0.3, s * 0.34); c.closePath(); c.fill();
+      c.strokeStyle = def.color; c.lineWidth = Math.max(2, s * 0.07); c.stroke();
+      c.globalAlpha = 0.7; chevrons(c, s * 0.7, 2, tt); c.globalAlpha = 1;
+      c.save(); c.rotate(-dir * Math.PI / 2);
+      c.fillStyle = def.color; c.font = '600 ' + Math.max(8, Math.round(s * 0.22)) + 'px ' + MONO; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(def.range), s * 0.3, -s * 0.34);
+      c.restore();
+    } else if (def.kind === 'sorter') {
+      c.rotate(dir * Math.PI / 2);
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.strokeStyle = T['belt-mark']; c.fillStyle = T['belt-mark']; c.lineWidth = Math.max(1.5, s * 0.06); c.lineCap = 'round';
+      arrow(c, s, 0);
+      c.strokeStyle = def.color; c.fillStyle = def.color; c.lineWidth = Math.max(2, s * 0.08);
+      arrow(c, s, -Math.PI / 2);   /* the left branch, where matching ore goes */
+      c.beginPath(); c.arc(-s * 0.2, 0, s * 0.11, 0, Math.PI * 2); c.fill();
     } else if (def.kind === 'bend') {
       rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
       c.fillStyle = T.belt; c.fill();
@@ -700,11 +834,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     c.restore();
     /* A dot in the top-right corner shows which effect an item makes (belts, upgraders) or likes (furnaces). */
-    var fk = def.fx || def.likes;
+    if (bare) return;
+    var fk = def.fx || def.likes, sk = def.oreSh || def.likesSh;
     if (fk && FX[fk]) {
       c.save(); c.translate(px, py);
       c.fillStyle = FX[fk].color; c.strokeStyle = 'rgba(0,0,0,0.55)'; c.lineWidth = Math.max(1, s * 0.04);
       c.beginPath(); c.arc(s * 0.82, s * 0.18, s * 0.1, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.restore();
+    }
+    /* A small shape in the corner shows which ore shape an item makes (upgraders, drills) or pays extra for (furnaces). */
+    if (sk && SHAPES[sk]) {
+      c.save(); c.translate(px, py);
+      c.fillStyle = '#f3ece6'; c.strokeStyle = 'rgba(0,0,0,0.6)'; c.lineWidth = Math.max(1, s * 0.04);
+      orePath(c, s * (fk && FX[fk] ? 0.58 : 0.82), s * 0.18, s * 0.1, sk); c.fill(); c.stroke();
       c.restore();
     }
     if (def.rarity === 'ascended') {
@@ -765,12 +907,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     });
     c.stroke();
     c.fillStyle = def.color; c.globalAlpha = a * 0.55;
-    offs.forEach(function (o) {
+    if (!def.eachTile) offs.forEach(function (o) {
       if (o[0] === 0 && o[1] === 0) return;
       c.beginPath(); c.arc(px + (o[0] + 0.5) * s, py + (o[1] + 0.5) * s, s * 0.09, 0, Math.PI * 2); c.fill();
     });
     c.restore();
-    drawItem(c, def, dir, px, py, s, tt, pulse);
+    if (def.eachTile) {   /* belts and fan splitters show their arrows on every tile */
+      offs.forEach(function (o) { drawItem(c, def, dir, px + o[0] * s, py + o[1] * s, s, tt, pulse, o[0] !== 0 || o[1] !== 0); });
+    } else drawItem(c, def, dir, px, py, s, tt, pulse);
   }
   function drawAny(c, def, dir, px, py, s, tt, pulse) {
     if (def.shape) drawBig(c, def, dir, px, py, s, tt, pulse); else drawItem(c, def, dir, px, py, s, tt, pulse);
@@ -795,6 +939,75 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (o.t < 0.5) { k = o.t / 0.5; px = o.x + 0.5 - f[0] * 0.5 * (1 - k); py = o.y + 0.5 - f[1] * 0.5 * (1 - k); }
     else { k = (o.t - 0.5) / 0.5; px = o.x + 0.5 + d[0] * 0.5 * k; py = o.y + 0.5 + d[1] * 0.5 * k; }
     return [px, py];
+  }
+
+  /* The outline of one ore: a circle, or one of the cut shapes. (x, y) is the centre and r the radius. Stars slowly spin. */
+  var TAU = Math.PI * 2;
+  function orePath(c, x, y, r, sh) {
+    var k, a, rad;
+    c.beginPath();
+    if (sh === 'sq') c.rect(x - r * 0.9, y - r * 0.9, r * 1.8, r * 1.8);
+    else if (sh === 'tri') { c.moveTo(x, y - r * 1.2); c.lineTo(x + r * 1.1, y + r * 0.8); c.lineTo(x - r * 1.1, y + r * 0.8); c.closePath(); }
+    else if (sh === 'dia') { c.moveTo(x, y - r * 1.3); c.lineTo(x + r * 0.95, y); c.lineTo(x, y + r * 1.3); c.lineTo(x - r * 0.95, y); c.closePath(); }
+    else if (sh === 'hex') { for (k = 0; k < 6; k++) { a = k * TAU / 6; c.lineTo(x + Math.cos(a) * r * 1.15, y + Math.sin(a) * r * 1.15); } c.closePath(); }
+    else if (sh === 'star') {
+      for (k = 0; k < 10; k++) { a = -Math.PI / 2 + k * Math.PI / 5 + time * 0.8; rad = k % 2 ? r * 0.6 : r * 1.4; c.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+      c.closePath();
+    } else c.arc(x, y, r, 0, TAU);
+  }
+
+  /* The picture around an ore that carries an effect. Every effect gets a tight outline in its colour, then its own style:
+     flame tongues, crackling sparks, pulsing rings, ghost copies, a speed trail, a split cell, orbiting dots, a dark swirl, drips. */
+  function drawAura(c, o, x, y, r, s) {
+    var F = FX[o.fx], a = F.aura, w = Math.max(1.5, s * 0.06), k, ang, ph, fh, life = F.ttl ? Math.max(0, Math.min(1, o.fxT / F.ttl)) : 1;
+    c.save();
+    c.strokeStyle = F.color; c.fillStyle = F.color; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round';
+    orePath(c, x, y, r, o.sh); c.stroke();
+    if (a === 'flame') {
+      c.globalAlpha = 0.85;
+      for (k = -1; k <= 1; k++) {
+        fh = r * (0.9 + 0.7 * (0.5 + 0.5 * Math.sin(time * 15 + k * 2.1 + o.age * 3))) * (0.5 + 0.5 * life);
+        c.beginPath(); c.moveTo(x + k * r * 0.65 - r * 0.28, y - r * 0.5); c.lineTo(x + k * r * 0.65, y - r * 0.5 - fh); c.lineTo(x + k * r * 0.65 + r * 0.28, y - r * 0.5); c.closePath(); c.fill();
+      }
+    } else if (a === 'spark') {
+      var sd = Math.floor(time * 14);
+      for (k = 0; k < 4; k++) {
+        ang = sd * 2.399 + k * 1.571 + o.age;
+        var r1 = r * 1.15, r2 = r * (1.7 + 0.25 * ((sd + k) % 3));
+        c.beginPath(); c.moveTo(x + Math.cos(ang) * r1, y + Math.sin(ang) * r1);
+        c.lineTo(x + Math.cos(ang + 0.35) * (r1 + r2) / 2, y + Math.sin(ang + 0.35) * (r1 + r2) / 2);
+        c.lineTo(x + Math.cos(ang) * r2, y + Math.sin(ang) * r2); c.stroke();
+      }
+    } else if (a === 'pulse') {
+      for (k = 0; k < 2; k++) { ph = (time * 1.3 + k * 0.5) % 1; c.globalAlpha = 0.7 * (1 - ph); c.beginPath(); c.arc(x, y, r * (1.1 + 1.3 * ph), 0, TAU); c.stroke(); }
+      c.globalAlpha = 0.95;
+      for (k = 0; k < 3; k++) { ang = time * 3 + k * 2.094; c.beginPath(); c.arc(x + Math.cos(ang) * r * 1.45, y + Math.sin(ang) * r * 1.45, r * 0.17, 0, TAU); c.fill(); }
+    } else if (a === 'ghost') {
+      for (k = 0; k < 2; k++) {
+        ang = o.age * (6 + k * 3) + k * 3.14;
+        c.globalAlpha = 0.45; orePath(c, x + Math.cos(ang) * r * 1.3, y + Math.sin(ang * 1.3) * r * 1.3, r, o.sh); c.stroke();
+        c.globalAlpha = 0.14; c.fill();
+      }
+    } else if (a === 'trail') {
+      var dv = DIRS[o.t < 0.5 ? o.from : o.out];
+      for (k = 1; k <= 3; k++) { c.globalAlpha = 0.55 - k * 0.14; c.beginPath(); c.arc(x - dv[0] * r * k * 1.25, y - dv[1] * r * k * 1.25, r * (1 - k * 0.2), 0, TAU); c.fill(); }
+    } else if (a === 'cell') {
+      c.globalAlpha = 0.85;
+      c.beginPath(); c.arc(x - r * 0.55, y, r * 0.95, 0, TAU); c.stroke();
+      c.beginPath(); c.arc(x + r * 0.55, y, r * 0.95, 0, TAU); c.stroke();
+    } else if (a === 'orbit') {
+      c.globalAlpha = 0.25; c.beginPath(); c.arc(x, y, r * 1.75, 0, TAU); c.stroke();
+      c.globalAlpha = 1;
+      for (k = 0; k < 3; k++) { ang = time * 6 + k * 2.094; c.beginPath(); c.arc(x + Math.cos(ang) * r * 1.75, y + Math.sin(ang) * r * 1.75, r * 0.24, 0, TAU); c.fill(); }
+    } else if (a === 'abyss') {
+      c.globalAlpha = 0.9;
+      for (k = 0; k < 2; k++) { c.beginPath(); c.arc(x, y, r * (1.45 + k * 0.3), time * (4 - k * 2) + k * 3.14, time * (4 - k * 2) + k * 3.14 + 2); c.stroke(); }
+    } else if (a === 'drip') {
+      for (k = 0; k < 3; k++) { ph = (time * 1.4 + k / 3) % 1; c.globalAlpha = 1 - ph; c.beginPath(); c.arc(x + (k - 1) * r * 0.7, y + r + ph * r * 1.8, r * 0.2, 0, TAU); c.fill(); }
+    } else {
+      c.globalAlpha = 0.4; c.beginPath(); c.arc(x, y, r * (1.2 + 0.5 * life), 0, TAU); c.stroke();
+    }
+    c.restore();
   }
 
   function oreColor(v) {
@@ -909,16 +1122,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (!grid[o.i]) continue;
       var p = orePos(o);
       var r = s * (0.13 + Math.min(0.08, Math.log10(Math.max(1, o.v)) * 0.012)) * (o.flash > 0 ? 1.35 : 1);
-      c.beginPath(); c.arc(p[0] * s, p[1] * s, r, 0, Math.PI * 2);
+      var ox = p[0] * s, oy = p[1] * s;
+      orePath(c, ox, oy, r, o.coal ? null : o.sh);
       c.fillStyle = o.coal ? '#4b5154' : oreColor(o.v); c.fill();
       c.strokeStyle = o.coal ? 'rgba(255,170,60,0.95)' : 'rgba(0,0,0,0.4)'; c.lineWidth = Math.max(1, s * 0.03); c.stroke();
-      /* An ore with an effect gets a coloured ring and a fainter halo. The halo shrinks as the effect runs down,
-         and in the last 1.5 seconds the whole ring flickers as a warning that it is about to wear off. */
-      if (o.fx && FX[o.fx] && !(o.fxT < 1.5 && Math.sin(time * 28) > 0)) {
-        var life = FX[o.fx].ttl ? Math.max(0, Math.min(1, o.fxT / FX[o.fx].ttl)) : 1;
-        c.strokeStyle = FX[o.fx].color; c.lineWidth = Math.max(1.5, s * 0.06); c.stroke();
-        c.globalAlpha = 0.4; c.beginPath(); c.arc(p[0] * s, p[1] * s, r * (1.2 + 0.5 * life), 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
-      }
+      /* An ore with an effect gets its aura (see drawAura). In the last 1.5 seconds of the effect the whole aura
+         flickers as a warning that it is about to wear off. */
+      if (o.fx && FX[o.fx] && !(o.fxT < 1.5 && Math.sin(time * 28) > 0)) drawAura(c, o, ox, oy, r, s);
     }
 
     c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -957,10 +1167,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var m = Math.random() < effCell(f) ? f.def.mult : 1;
     /* A furnace that cares about effects scales the sale by how the ore's effect matches its table. */
     var fxm = (f.def.fxBonus && o.fx && f.def.fxBonus[o.fx] != null) ? f.def.fxBonus[o.fx] : 1;
-    var gain = o.v * m * fxm;
+    var shm = (f.def.shapeBonus && o.sh && f.def.shapeBonus[o.sh] != null) ? f.def.shapeBonus[o.sh] : 1;
+    /* Superposed ore is a coin flip when it is sold: ×8 if it collapses well, ×0.1 if not. An Observer furnace tilts the coin. */
+    var qm = 1, qs = '';
+    if (o.fx === 'quantum') {
+      var win = Math.random() < (f.def.qP != null ? f.def.qP : 0.5);
+      qm = win ? 8 : 0.1; qs = win ? '↑ ' : '↓ ';
+    }
+    var gain = o.v * m * fxm * shm * qm;
     st.cash += gain; st.run += gain; st.total += gain; earnedAcc += gain;
     f.pulse = 0.25;
-    if (floaters.length < 22) floaters.push({ x: f.x + 0.5, y: f.y + 0.1, txt: '+$' + fmt(gain), age: 0 });
+    if (floaters.length < 22) floaters.push({ x: f.x + 0.5, y: f.y + 0.1, txt: qs + '+$' + fmt(gain), age: 0 });
   }
 
   function waste(n) {
@@ -1016,27 +1233,72 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     return true;
   }
 
-  function accepts(x, y) {
+  function accepts(x, y, self) {
     if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return false;
     var c = grid[x + y * COLS];
-    return !!c && c.def.kind !== 'drill' && c.def.kind !== 'bat';
+    return !!c && c !== self && c.def.kind !== 'drill' && c.def.kind !== 'bat';
   }
-  function exitDir(c, travel) {
-    if (c.def.kind === 'bend') {
+  /* Which way ore leaves tile (tx, ty) of machine c. `travel` is the way it came in, `o` is the ore.
+     Tile coordinates are passed in because a big machine (the Fan splitter) is several tiles wide and each tile decides for itself. */
+  function exitDir(c, travel, tx, ty, o) {
+    var kind = c.def.kind, j, v;
+    if (kind === 'bend') {
       /* A corner joins side `dir` to side `dir + 1`. Ore leaves by whichever of the two it didn't come in through. */
       var entry = (travel + 2) % 4;
       if (entry === c.dir) return (c.dir + 1) % 4;
       if (entry === (c.dir + 1) % 4) return c.dir;
       return travel;
     }
-    if (c.def.kind === 'split') {
+    if (kind === 'cross') return travel;                 /* straight on, whichever way it came */
+    if (kind === 'spin') return (travel + 1) % 4;        /* always a quarter turn to the right */
+    if (kind === 'sorter') {
+      /* Matching ore (has an effect, or has a cut shape) turns left of the arrow. Everything else carries on. */
+      var hit = c.def.by === 'sh' ? !!o.sh : !!o.fx;
+      if (hit) { var ld = (c.dir + 3) % 4; v = DIRS[ld]; if (accepts(tx + v[0], ty + v[1], c)) return ld; }
+      return c.dir;
+    }
+    if (kind === 'split') {
       var opts = [c.dir, (c.dir + 1) % 4, (c.dir + 3) % 4];
-      for (var j = 0; j < 3; j++) {
-        var dd = opts[(c.n + j) % 3], v = DIRS[dd];
-        if (accepts(c.x + v[0], c.y + v[1])) { c.n = (c.n + j + 1) % 3; return dd; }
+      for (j = 0; j < 3; j++) {
+        var dd = opts[(c.n + j) % 3]; v = DIRS[dd];
+        if (accepts(tx + v[0], ty + v[1], c)) { c.n = (c.n + j + 1) % 3; return dd; }
       }
     }
     return c.dir;
+  }
+
+  /* A tunnel mouth swallows ore that is heading the way it faces and spits it out of the nearest tunnel of the same
+     type, facing the same way, within `range` tiles ahead. Whatever lies between is passed under. With no partner it is a plain belt. */
+  function dive(o, n, tx, ty) {
+    var v = DIRS[n.dir];
+    for (var k = 1; k <= n.def.range; k++) {
+      var gx = tx + v[0] * k, gy = ty + v[1] * k;
+      if (gx < 0 || gy < 0 || gx >= COLS || gy >= ROWS) return false;
+      var g = grid[gx + gy * COLS];
+      if (g && g !== n && g.def.id === n.def.id && g.dir === n.dir) {
+        n.pulse = 0.25; g.pulse = 0.25;
+        o.x = gx; o.y = gy; o.i = gx + gy * COLS; o.from = n.dir; o.out = n.dir; o.t = 0.5; o.flash = 0.25;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /* Radiation spreads: bare ore that touches an irradiated one (closer than about half a tile) catches it. */
+  function spreadRad(dt) {
+    var rad = [], k, j, px = [], py = [], p;
+    for (k = 0; k < ores.length; k++) { p = orePos(ores[k]); px.push(p[0]); py.push(p[1]); if (ores[k].fx === 'rad') rad.push(k); }
+    if (!rad.length) return;
+    var chance = 1 - Math.exp(-4 * dt);
+    for (k = 0; k < rad.length; k++) {
+      var a = rad[k];
+      for (j = 0; j < ores.length; j++) {
+        var b = ores[j];
+        if (j === a || b.fx || b.coal || !grid[b.i]) continue;
+        var dx = px[a] - px[j], dy = py[a] - py[j];
+        if (dx * dx + dy * dy < 0.2 && Math.random() < chance) setFx(b, 'rad');
+      }
+    }
   }
 
   function tick(dt) {
@@ -1080,7 +1342,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         if (c.timer >= c.def.interval) {
           if (ores.length < CAP) {
             c.timer -= c.def.interval;
-            ores.push({ i: i, x: c.x, y: c.y, t: 0.5, from: c.dir, out: c.dir, v: c.def.value, coal: !!c.def.coal, age: 0, seen: [], flash: 0 });
+            var born = { i: i, x: c.x, y: c.y, t: 0.5, from: c.dir, out: c.dir, v: c.def.value, coal: !!c.def.coal, age: 0, seen: [], flash: 0, sh: c.def.oreSh || null };
+            if (c.def.fx && !born.coal) setFx(born, c.def.fx);
+            ores.push(born);
           } else { c.timer = c.def.interval; }
         }
       }
@@ -1089,9 +1353,12 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       var o = ores[k], cc = grid[o.i];
       o.age += dt;
       /* The effect wears off. This runs in real seconds, so a slow belt or low power gives the effect less distance to work in. */
-      if (o.fx) { o.fxT -= dt; if (o.fxT <= 0) { o.fx = null; o.fxT = 0; } }
+      /* A Stasis belt freezes the clock, so the effect lasts as long as the ore rides it. */
+      if (o.fx && !(cc && cc.def.stasis)) { o.fxT -= dt; if (o.fxT <= 0) { o.fx = null; o.fxT = 0; } }
       if (!cc || cc.def.kind === 'fur' || cc.def.kind === 'conv' || cc.def.kind === 'bat' || o.age > 90) { ores.splice(k, 1); continue; }
-      o.t += (cc.def.kind === 'belt' ? cc.def.speed : 2) * dt * effCell(cc);
+      if (o.fx === 'rad') o.v *= 1 + 0.08 * dt;          /* radiation grows the ore... */
+      else if (o.fx === 'acid') o.v *= 1 - 0.05 * dt;    /* ...acid eats it */
+      o.t += (cc.def.speed || 2) * dt * effCell(cc) * (o.fx === 'chrono' ? 1.8 : 1);
       if (o.flash > 0) o.flash -= dt;
       /* An effect belt marks any ore that is past the middle of its tile. Marking twice changes nothing, so no `seen` needed. */
       if (cc.def.fx && cc.def.kind === 'belt' && o.t >= 0.5 && !o.coal) setFx(o, cc.def.fx);
@@ -1104,11 +1371,16 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
             /* Read the ore's effect BEFORE this machine sets its own, so a Resonance tank rewards what came in. */
             o.v *= (cc.def.fxMult && o.fx) ? cc.def.fxMult : cc.def.mult;
             if (cc.def.fx) setFx(o, cc.def.fx);
+            if (cc.def.oreSh) o.sh = cc.def.oreSh;
+            /* Mitosis: the ore splits in two. Each half carries the full multiplier, so the pair is worth double. */
+            if (cc.def.mitosis && ores.length < CAP) {
+              ores.push({ i: o.i, x: o.x, y: o.y, t: Math.max(0.5, o.t - 0.25), from: o.from, out: o.out, v: o.v, fx: o.fx, fxT: o.fxT, sh: o.sh, age: o.age, seen: o.seen.slice(), flash: 0.25 });
+            }
           }
         } else if (cc.def.kind === 'dup') {
           o.seen.push(mk); o.flash = 0.25;
           if (!cc.broken && Math.random() < 0.5 * effCell(cc) && ores.length < CAP) {
-            ores.push({ i: o.i, x: o.x, y: o.y, t: Math.max(0.5, o.t - 0.2), from: o.from, out: o.out, v: o.v, fx: o.fx, fxT: o.fxT, age: o.age, seen: o.seen.slice(), flash: 0.25 });
+            ores.push({ i: o.i, x: o.x, y: o.y, t: Math.max(0.5, o.t - 0.2), from: o.from, out: o.out, v: o.v, fx: o.fx, fxT: o.fxT, sh: o.sh, age: o.age, seen: o.seen.slice(), flash: 0.25 });
           }
         }
       }
@@ -1120,9 +1392,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         if (n.def.kind === 'fur') { if (o.coal || n.broken) waste(n); else sell(o, n); ores.splice(k, 1); continue; }
         if (n.def.kind === 'conv') { if (o.coal) convert(o, n); else waste(n); ores.splice(k, 1); continue; }
         if (n.def.kind === 'tele') { if (!n.broken && teleport(o, n)) continue; waste(n); ores.splice(k, 1); continue; }
-        o.x = nx; o.y = ny; o.i = ni; o.from = o.out; o.t -= 1; o.out = exitDir(n, o.from);
+        if (n.def.kind === 'tunnel' && o.out === n.dir && dive(o, n, nx, ny)) continue;
+        o.x = nx; o.y = ny; o.i = ni; o.from = o.out; o.t -= 1; o.out = exitDir(n, o.from, nx, ny, o);
       }
     }
+    spreadRad(dt);
     for (k = floaters.length - 1; k >= 0; k--) {
       floaters[k].age += dt;
       if (floaters[k].age >= 1) floaters.splice(k, 1);
@@ -1241,21 +1515,29 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (d.kind === 'conv') return 'Takes coal only. Gives ' + d.rate + ' energy per coal value';
     if (d.kind === 'bat') return 'Stores +' + d.cap + ' energy';
     if (d.kind === 'belt' && d.fx) return d.speed + ' cells per second. Makes ore ' + fxNote(d.fx);
-    if (d.kind === 'belt') return d.speed + ' cells per second';
+    if (d.kind === 'belt' && d.stasis) return d.speed + ' cells per second. Effect timers freeze while ore rides it';
+    if (d.kind === 'belt') return d.speed + ' cells per second' + (d.shape ? ', on every tile' : '');
+    if (d.kind === 'cross') return 'Ore goes straight through, so two lines can cross';
+    if (d.kind === 'spin') return 'Turns every ore a quarter turn to the right';
+    if (d.kind === 'tunnel') return 'Ore heading the way it faces jumps to the next ' + d.name + ' up to ' + d.range + ' tiles ahead. Needs two, same way round';
+    if (d.kind === 'sorter') return (d.by === 'sh' ? 'Cut-shape ore' : 'Ore with an effect') + ' turns left of the arrow, the rest goes straight';
     if (d.kind === 'tele') return 'Ore sent in comes out of another ' + d.name + (d.mult ? ', ×' + d.mult : '') + '. Needs two';
     if (d.kind === 'bend') return 'Joins two sides at a right angle. Ore can travel either way';
     if (d.kind === 'split' && d.mult) return 'Splits ore three ways and multiplies it ×' + d.mult;
-    if (d.kind === 'split') return 'Sends ore forward, left and right in turn';
+    if (d.kind === 'split') return 'Sends ore forward, left and right in turn' + (d.shape ? ', from every tile' : '');
     if (d.kind === 'dup') return '50% chance to copy each ore';
-    if (d.kind === 'drill') return 'Ore worth $' + fmt(d.value) + ' every ' + d.interval + 's';
-    if (d.kind === 'up' && d.fxMult) return '×' + d.fxMult + ' on ore with an effect, ×1 without · max ' + MAX_UP + ' on the floor';
-    if (d.kind === 'up' && d.fx) return '×' + d.mult + ' and makes ore ' + fxNote(d.fx) + ' · max ' + MAX_UP + ' on the floor';
-    if (d.kind === 'up') return '×' + d.mult + ' ore value · max ' + MAX_UP + ' on the floor';
-    if (d.fxBonus) {
-      var bits = Object.keys(d.fxBonus).map(function (k) { return FX[k].name + ' ×' + d.fxBonus[k]; });
-      return 'Sells ore at ×' + d.mult + '. Effect bonus: ' + bits.join(', ');
+    if (d.kind === 'drill') return 'Ore worth $' + fmt(d.value) + ' every ' + d.interval + 's' + (d.fx ? ' · ore starts ' + fxNote(d.fx) : '') + (d.oreSh ? ' · cut as a ' + SHAPES[d.oreSh] : '');
+    if (d.kind === 'up') {
+      var u = d.fxMult ? '×' + d.fxMult + ' on ore with an effect, ×1 without' : d.mitosis ? 'Splits each ore in two, each ×' + d.mult : '×' + d.mult + (d.fx || d.oreSh ? '' : ' ore value');
+      if (d.fx && !d.fxMult) u += ' and makes ore ' + fxNote(d.fx);
+      if (d.oreSh) u += (d.fx ? ', ' : ' and ') + 'cuts ore into a ' + SHAPES[d.oreSh];
+      return u + ' · max ' + MAX_UP + ' on the floor';
     }
-    return 'Sells ore at ×' + d.mult;
+    var fb = [];
+    if (d.fxBonus) Object.keys(d.fxBonus).forEach(function (k) { fb.push(FX[k].name + ' ×' + d.fxBonus[k]); });
+    if (d.shapeBonus) Object.keys(d.shapeBonus).forEach(function (k) { fb.push('a ' + SHAPES[k] + ' ×' + d.shapeBonus[k]); });
+    if (d.qP != null) fb.push('Superposed ore wins ×8 ' + Math.round(d.qP * 100) + '% of the time, not 50%');
+    return 'Sells ore at ×' + d.mult + (fb.length ? '. Pays extra for: ' + fb.join(', ') : '');
   }
   function isLocked(d) {
     if (d.asc) return !(st.inv[d.id] > 0);
