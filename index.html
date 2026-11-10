@@ -84,6 +84,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .btn[aria-pressed="true"], .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn:focus-visible, .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#surge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 3; pointer-events: none; max-width: calc(100% - 24px); padding: 6px 14px; border-radius: 999px; border: 2px solid var(--bad); background: var(--bg); color: var(--bad); font: 600 13px/1.3 var(--mono, ui-monospace, monospace); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
 #hint { flex: 1 1 200px; min-width: 0; color: var(--ink-2); font-size: 13px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .rebirth { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--line); border-radius: 6px; }
@@ -142,6 +143,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   <main class="layout">
     <section class="stage" aria-label="Factory floor">
       <canvas id="c" aria-label="Factory floor grid"></canvas>
+      <div id="surge" role="status" hidden></div>
       <div class="toolbar">
         <button class="btn" id="btnRot" type="button">Rotate (R)</button>
         <button class="btn" id="btnLand" type="button" aria-pressed="false">Buy land (L)</button>
@@ -181,6 +183,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var START_TILES = (PLOT.x1 - PLOT.x0 + 1) * (PLOT.y1 - PLOT.y0 + 1);
   var LAND_BASE = 500, LAND_GROWTH = 1.06;
   var REBIRTH_BASE = 500000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 20, BASE_CAP = 100, BREAK_AFTER = 8;
+  /* Power surge event: each time your cash reaches a new money suffix (K, M, B, T...) there is a 1 in 20 chance of a surge,
+     which halves the energy every coal ore gives for 5 minutes. Each suffix gets one roll per life. */
+  var SURGE_CHANCE = 1 / 20, SURGE_SECONDS = 300, SURGE_FACTOR = 0.5;
 
   /* Footprints. Each is a list of [dx, dy] tile offsets seen from the item's own point of view while it faces right (direction 0).
      [0, 0] is always the "head" tile: the one that carries the picture, and for drills the one ore leaves from.
@@ -474,7 +479,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   }
 
   /* ---------- state ---------- */
-  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [] };
+  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [], surge: 0, tier: 0 };
   var capNow = BASE_CAP, effNow = 1, effRaw = 1, effS = 1, demandNow = 0, outage = 0, brokenCount = 0, weakCount = 0;
   /* How well a machine runs. Ordinary machines never drop below 30%. Ascended machines drop to 0. */
   function effOf(def) { return def.draw ? (def.asc ? effRaw : effNow) : 1; }
@@ -611,7 +616,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (moving) moving.items.forEach(function (it) { cells.push([it.ox, it.oy, it.m.def.id, it.od, it.m.broken ? 1 : 0, it.m.weak ? 1 : 0]); });
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         cash: st.cash, run: st.run, total: st.total, cores: st.cores, spent: st.spent, rebirths: st.rebirths,
-        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, land: land, cells: cells
+        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, surge: st.surge, tier: st.tier, land: land, cells: cells
       }));
     } catch (e) {}
   }
@@ -628,6 +633,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       st.inv = (d.inv && typeof d.inv === 'object') ? d.inv : {};
       st.asc = Array.isArray(d.asc) ? d.asc.filter(function (i) { return i >= 0 && i < N; }) : [];
       while (st.asc.length < Math.min(st.rebirths, ASC_ORDER.length)) grantNext();
+      st.surge = Math.max(0, Math.min(SURGE_SECONDS, +d.surge || 0));
+      /* An older save has no tier: start from where its cash already is, so loading does not roll for every suffix at once. */
+      st.tier = d.tier != null ? Math.max(0, Math.min(14, d.tier | 0)) : cashTier(st.cash);
       resetLand();
       if (Array.isArray(d.land)) {
         owned.fill(false);
@@ -1236,8 +1244,21 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   function waste(n) {
     if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '×', age: 0, bad: true });
   }
+  /* The money suffix tier of an amount: 0 below $1K, 1 for K, 2 for M, and so on (one step per three zeros). */
+  function cashTier(n) { var t = 0; while (t < 14 && n >= Math.pow(1000, t + 1)) t++; return t; }
+  function startSurge() {
+    st.surge = SURGE_SECONDS;
+    note('POWER SURGE! Every coal ore gives half the energy for 5 minutes.');
+  }
+  /* Called every frame. Each new tier reached rolls the dice once, and the tier only ever goes up within a life,
+     so spending money and earning it back cannot farm extra rolls. */
+  function checkSurge() {
+    var t = cashTier(st.cash);
+    while (st.tier < t) { st.tier++; if (Math.random() < SURGE_CHANCE) startSurge(); }
+  }
+
   function convert(o, n) {
-    var e = o.v * n.def.rate;
+    var e = o.v * n.def.rate * (st.surge > 0 ? SURGE_FACTOR : 1);
     st.energy = Math.min(capNow, st.energy + e);
     n.pulse = 0.25;
     if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '+' + fmt(e) + ' E', age: 0, pw: true });
@@ -1363,6 +1384,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   function tick(dt) {
     time += dt;
+    if (st.surge > 0) st.surge = Math.max(0, st.surge - dt);
+    checkSurge();
     var i, k, demand = 0, cap = BASE_CAP, brokenN = 0, weakN = 0;
     for (i = 0; i < N; i++) {
       var g = grid[i];
@@ -1831,14 +1854,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   twoStep(btnRebirth, rebirthLabel, 'Press again to confirm', function () {
     var g = rebirthGain();
     if (g < 1) return;
-    st.cores += g; st.rebirths += 1; st.cash = 40; st.run = 0; st.energy = BASE_CAP;
+    st.cores += g; st.rebirths += 1; st.cash = 40; st.run = 0; st.energy = BASE_CAP; st.tier = 0;
     grantNext();
     resetFloor(); save();
     var reward = BY_ID[ASC_ORDER[st.asc.length - 1]];
     if (reward) note('Rebirth reward: ' + reward.name + ', plus a new glowing square to place it on.');
   });
   twoStep(btnReset, function () { return 'Reset save'; }, 'Press again to erase everything', function () {
-    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = [];
+    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = []; st.surge = 0; st.tier = 0;
     if (selected && (selected.core || selected.asc)) selectItem(null);
     resetFloor(); save();
   });
@@ -1850,11 +1873,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var elLand = document.getElementById('land');
   var elPow = document.getElementById('pow'), elPowLabel = document.getElementById('powLabel');
   var uiT = 0, incT = 0, themeT = 0, saveT = 0;
+  var elSurge = document.getElementById('surge'), surgeShown = '';
+  function updateSurgeBanner() {
+    var txt = '';
+    if (st.surge > 0) { var sec = Math.ceil(st.surge); txt = '⚡ POWER SURGE: coal gives half energy · ' + Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+    if (txt === surgeShown) return;
+    surgeShown = txt; elSurge.hidden = !txt; elSurge.textContent = txt;
+  }
   function ui(dt) {
     uiT += dt; incT += dt; themeT += dt; saveT += dt;
     if (incT >= 0.5) { inc = inc * 0.8 + (earnedAcc / incT) * 0.2; earnedAcc = 0; incT = 0; }
     if (themeT >= 1) { themeT = 0; readTheme(); }
     if (saveT >= 5) { saveT = 0; save(); }
+    if (uiT >= 0.12) updateSurgeBanner();
     if (uiT < 0.12) return;
     uiT = 0;
     elCash.textContent = '$' + fmt(Math.floor(st.cash));
