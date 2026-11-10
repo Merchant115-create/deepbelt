@@ -145,6 +145,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       <div class="toolbar">
         <button class="btn" id="btnRot" type="button">Rotate (R)</button>
         <button class="btn" id="btnLand" type="button" aria-pressed="false">Buy land (L)</button>
+        <button class="btn" id="btnMove" type="button" aria-pressed="false">Move (M)</button>
         <button class="btn" id="btnErase" type="button" aria-pressed="false">Remove (X)</button>
         <button class="btn" id="btnDesel" type="button">Deselect (Esc)</button>
         <div id="hint"></div>
@@ -243,6 +244,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'bsortsh', kind: 'sorter', name: 'Shape sorter', cost: 20000, speed: 3, by: 'sh', color: '#9adf6a' },
     { id: 'bfan', kind: 'split', name: 'Fan splitter', cost: 45000, speed: 2, color: '#3a4644', shape: SH.wide3, eachTile: true },
     { id: 'btun1', kind: 'tunnel', name: 'Deep tunnel', cost: 90000, speed: 3, range: 12, color: '#6aa8d8' },
+    { id: 'btwo0', kind: 'twoway', name: 'Two-way belt', cost: 120, speed: 2.5, color: '#3a4644' },
+    { id: 'btwo1', kind: 'twoway', name: 'Two-way rail', cost: 4000, speed: 6, color: '#3a4644', shape: SH.long3, eachTile: true },
     { id: 'bmaglev', kind: 'belt', name: 'Maglev rail', cost: 600000, speed: 30, color: '#3a4644', shape: SH.long3, eachTile: true },
 
     { id: 'drill0', kind: 'drill', name: 'Rust drill', cost: 25, value: 1, interval: 1.6, color: '#b5532b' },
@@ -275,17 +278,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     { id: 'coal0', kind: 'drill', coal: true, name: 'Coal drill', cost: 150, value: 2, interval: 1.2, color: '#3a3f41' },
     { id: 'coal1', kind: 'drill', coal: true, name: 'Coal rig', cost: 15000, value: 14, interval: 1.0, color: '#2f3436' },
     { id: 'coal2', kind: 'drill', coal: true, name: 'Coal engine', cost: 2000000, value: 100, interval: 0.9, color: '#252a2c' },
-    { id: 'coal3', kind: 'drill', coal: true, name: 'Anthracite rig', cost: 1.5e9, value: 800, interval: 0.8, color: '#1f2426', shape: SH.long2 },
-    { id: 'coal4', kind: 'drill', coal: true, name: 'Black seam engine', cost: 2e11, value: 6000, interval: 0.7, color: '#171b1d', shape: SH.block },
+    { id: 'coal3', kind: 'drill', coal: true, name: 'Anthracite rig', cost: 1.5e9, value: 200, interval: 0.9, color: '#1f2426', shape: SH.long2 },
+    { id: 'coal4', kind: 'drill', coal: true, name: 'Black seam engine', cost: 2e11, value: 500, interval: 1.0, color: '#171b1d', shape: SH.block },
     { id: 'conv0', kind: 'conv', name: 'Life force converter', cost: 400, rate: 1, color: '#e0a030' },
     { id: 'bat0', kind: 'bat', name: 'Battery', cost: 800, cap: 500, color: '#46c37b' },
     { id: 'conv1', kind: 'conv', name: 'Tesla coil', cost: 5e6, rate: 2, color: '#f0b429', shape: SH.ahead2 },
     { id: 'bat1', kind: 'bat', name: 'Capacitor bank', cost: 60000, cap: 6000, color: '#46c37b', shape: SH.wide2 },
     { id: 'bat2', kind: 'bat', name: 'Grid vault', cost: 2e7, cap: 80000, color: '#46c37b', shape: SH.block2 },
-    { id: 'coal5', kind: 'drill', coal: true, name: 'Pitch engine', cost: 2e12, value: 24000, interval: 0.6, color: '#14181a', shape: SH.long2 },
-    { id: 'coal6', kind: 'drill', coal: true, name: 'Deepseam borer', cost: 2e13, value: 96000, interval: 0.55, color: '#101416', shape: SH.elbow },
-    { id: 'coal7', kind: 'drill', coal: true, name: 'Magma tap', cost: 2e14, value: 380000, interval: 0.5, color: '#2a1612', shape: SH.block },
-    { id: 'coal8', kind: 'drill', coal: true, name: 'Core tap', cost: 2e15, value: 1500000, interval: 0.45, color: '#3a1a10', shape: SH.tee },
+    { id: 'coal5', kind: 'drill', coal: true, name: 'Pitch engine', cost: 2e12, value: 1200, interval: 1.1, color: '#14181a', shape: SH.long2 },
+    { id: 'coal6', kind: 'drill', coal: true, name: 'Deepseam borer', cost: 2e13, value: 3000, interval: 1.2, color: '#101416', shape: SH.elbow },
+    { id: 'coal7', kind: 'drill', coal: true, name: 'Magma tap', cost: 2e14, value: 8000, interval: 1.3, color: '#2a1612', shape: SH.block },
+    { id: 'coal8', kind: 'drill', coal: true, name: 'Core tap', cost: 2e15, value: 20000, interval: 1.4, color: '#3a1a10', shape: SH.tee },
     { id: 'conv2', kind: 'conv', name: 'Fusion stack', cost: 4e9, rate: 5, color: '#f0b429', shape: SH.wide3 },
     { id: 'conv3', kind: 'conv', name: 'Dyson loop', cost: 6e12, rate: 12, color: '#ffd36b', shape: SH.plus },
     { id: 'conv4', kind: 'conv', name: 'Zero-point tap', cost: 8e15, rate: 30, color: '#fff2a8', shape: SH.big3 },
@@ -408,7 +411,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     fur6: 60, fur7: 90, fur8: 130, fur9: 190, fur10: 280,
     cember: 0.1, cfrost: 0.1, clight: 0.4, ctele0: 10, ctele1: 25, ctele2: 50,
     cflare: 40, ccryo: 40, carc: 40, cmidas: 100, creson: 70, csub: 60, cblast: 60, cstorm: 60, cvault: 120,
-    bcross: 0.02, btri: 0.05, bspin: 0.05, btun0: 0.1, bstasis: 0.15, bsortfx: 0.3, bsortsh: 0.3, bfan: 0.3, btun1: 0.6, bmaglev: 1.5,
+    bcross: 0.02, btwo0: 0.04, btwo1: 0.2, btri: 0.05, bspin: 0.05, btun0: 0.1, bstasis: 0.15, bsortfx: 0.3, bsortsh: 0.3, bfan: 0.3, btun1: 0.6, bmaglev: 1.5,
     drill16: 700, drill17: 950, drill18: 1300, drill19: 1800, drill20: 2500, drill21: 3500, drill22: 5000, drill23: 7000, drill24: 10000, drill25: 14000,
     up14: 350, up15: 420, up16: 500, up17: 600, up18: 750, up19: 900, up20: 1100, up21: 1400, up22: 1800, up23: 2300,
     fur11: 320, fur12: 380, fur13: 450, fur14: 540, fur15: 650, fur16: 780, fur17: 940, fur18: 1100, fur19: 1350, fur20: 1700,
@@ -436,7 +439,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     asc_u2: 'ascended', asc_f2: 'ascended', asc_d3: 'ascended', asc_u3: 'ascended', asc_f3: 'ascended',
     asc_d4: 'ascended', asc_u4: 'ascended', asc_f4: 'ascended', asc_s2: 'ascended', asc_d5: 'ascended',
     asc_u5: 'ascended', asc_f5: 'ascended', asc_d6: 'ascended', asc_u6: 'ascended', asc_f6: 'ascended',
-    bstasis: 'rare', bsortfx: 'rare', bsortsh: 'rare', bfan: 'rare', btun1: 'epic', bmaglev: 'epic', btun0: 'uncommon',
+    btwo1: 'rare', bstasis: 'rare', bsortfx: 'rare', bsortsh: 'rare', bfan: 'rare', btun1: 'epic', bmaglev: 'epic', btun0: 'uncommon',
     drill16: 'divine', drill17: 'divine', drill18: 'divine', drill19: 'divine', drill20: 'divine',
     drill21: 'divine', drill22: 'divine', drill23: 'divine', drill24: 'divine', drill25: 'divine',
     coal5: 'epic', coal6: 'legendary', coal7: 'legendary', coal8: 'mythic', conv2: 'rare', conv3: 'epic', conv4: 'legendary',
@@ -454,7 +457,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   /* A shaped item can be turned even if it is a furnace or battery, because turning swings its footprint. */
   function directional(def) { return !!def.shape || (def.kind !== 'fur' && def.kind !== 'conv' && def.kind !== 'bat' && def.kind !== 'cross' && def.kind !== 'spin'); }
   /* Everything that moves ore along sits in the Belts group of the shop. */
-  var BELT_KINDS = { belt: 1, bend: 1, cross: 1, spin: 1, sorter: 1, tunnel: 1, split: 1 };
+  var BELT_KINDS = { belt: 1, twoway: 1, bend: 1, cross: 1, spin: 1, sorter: 1, tunnel: 1, split: 1 };
   function grp(d) {
     if (d.asc) return 'asc';
     if (d.core) return 'core';
@@ -482,6 +485,9 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var ores = [], floaters = [];
   var time = 0, inc = 0, earnedAcc = 0;
   var selected = null, erase = false, landMode = false, dirNew = 0, hover = null;
+  /* Move mode. `moving` holds the machines being carried (one or a whole boxed group). They are lifted off the grid, and each remembers
+     where it came from (`ox`, `oy`, `od`) and its offset from the group's anchor tile (`dx`, `dy`). `rot` is how far the group has been turned. */
+  var moveMode = false, moving = null, marquee = null;
 
   function spendable() { return st.cores - st.spent; }
 
@@ -593,7 +599,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     place('belt0', 11, 7, 0);
     place('bconv', 12, 7, 0);
   }
-  function resetFloor() { grid.fill(null); ores = []; floaters = []; resetLand(); starter(); }
+  function resetFloor() { moving = null; grid.fill(null); ores = []; floaters = []; resetLand(); starter(); }
 
   function save() {
     try {
@@ -602,6 +608,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         var c = grid[i]; if (c && isHead(c, i)) cells.push([c.x, c.y, c.def.id, c.dir, c.broken ? 1 : 0, c.weak ? 1 : 0]);
         if (owned[i]) land.push(i);
       }
+      if (moving) moving.items.forEach(function (it) { cells.push([it.ox, it.oy, it.m.def.id, it.od, it.m.broken ? 1 : 0, it.m.weak ? 1 : 0]); });
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         cash: st.cash, run: st.run, total: st.total, cores: st.cores, spent: st.spent, rebirths: st.rebirths,
         unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, land: land, cells: cells
@@ -689,6 +696,18 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         c.fillStyle = '#7fd8ff'; c.globalAlpha = 0.9;
         c.fillRect(-s * 0.11, -s * 0.2, s * 0.07, s * 0.4); c.fillRect(s * 0.04, -s * 0.2, s * 0.07, s * 0.4);
         c.globalAlpha = 1;
+      }
+    } else if (def.kind === 'twoway') {
+      /* Two lanes side by side with arrows going opposite ways. Ore going each way rides the lane on its own right-hand side. */
+      rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
+      c.fillStyle = T.belt; c.fill();
+      c.rotate(dir * Math.PI / 2);
+      c.strokeStyle = T['belt-mark']; c.lineWidth = Math.max(1, s * 0.03); c.setLineDash([s * 0.08, s * 0.08]);
+      c.beginPath(); c.moveTo(-s * 0.42, 0); c.lineTo(s * 0.42, 0); c.stroke(); c.setLineDash([]);
+      c.strokeStyle = def.speed >= 4 ? T.accent : T['belt-mark'];
+      for (var ln = 0; ln < 2; ln++) {
+        c.save(); c.translate(0, ln ? -s * 0.24 : s * 0.24); if (ln) c.rotate(Math.PI);
+        c.scale(0.85, 0.55); chevrons(c, s, Math.min(def.speed, 10), tt); c.restore();
       }
     } else if (def.kind === 'cross') {
       rr(c, -s * 0.48, -s * 0.48, s * 0.96, s * 0.96, s * 0.1);
@@ -938,6 +957,15 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var d = DIRS[o.out], f = DIRS[o.from], px, py, k;
     if (o.t < 0.5) { k = o.t / 0.5; px = o.x + 0.5 - f[0] * 0.5 * (1 - k); py = o.y + 0.5 - f[1] * 0.5 * (1 - k); }
     else { k = (o.t - 0.5) / 0.5; px = o.x + 0.5 + d[0] * 0.5 * k; py = o.y + 0.5 + d[1] * 0.5 * k; }
+    var tc = grid[o.i];
+    if (tc && tc.def.kind === 'twoway') {
+      /* The lane is set by the way the ore will LEAVE (the right-hand side of that direction), and it stays put for the whole tile.
+         Ore that came in from the side slides into its lane over the first half, and out of it again if the next tile is not a two-way. */
+      var lane = 1, nx2 = o.x + d[0], ny2 = o.y + d[1], nt = (nx2 >= 0 && ny2 >= 0 && nx2 < COLS && ny2 < ROWS) ? grid[nx2 + ny2 * COLS] : null;
+      if (o.t < 0.5) { if (o.from % 2 !== o.out % 2) lane = o.t / 0.5; }
+      else if (!nt || nt.def.kind !== 'twoway') lane = 1 - (o.t - 0.5) / 0.5;
+      px -= d[1] * 0.24 * lane; py += d[0] * 0.24 * lane;
+    }
     return [px, py];
   }
 
@@ -1083,6 +1111,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       }
     }
 
+    if (marquee) {   /* the box being dragged to select several items */
+      var mx0 = Math.min(marquee.x0, marquee.x1), mx1 = Math.max(marquee.x0, marquee.x1), my0 = Math.min(marquee.y0, marquee.y1), my1 = Math.max(marquee.y0, marquee.y1);
+      c.fillStyle = T.accent; c.globalAlpha = 0.16; c.fillRect(mx0 * s, my0 * s, (mx1 - mx0 + 1) * s, (my1 - my0 + 1) * s);
+      c.globalAlpha = 1; c.strokeStyle = T.accent; c.lineWidth = 2; c.setLineDash([s * 0.2, s * 0.12]);
+      c.strokeRect(mx0 * s + 1, my0 * s + 1, (mx1 - mx0 + 1) * s - 2, (my1 - my0 + 1) * s - 2); c.setLineDash([]);
+    }
+    if (moving) {   /* a dashed outline shows where the carried machines came from */
+      c.strokeStyle = T.accent; c.lineWidth = Math.max(2, s * 0.05); c.setLineDash([s * 0.15, s * 0.1]); c.globalAlpha = 0.7;
+      moving.items.forEach(function (it) { footprint(it.m.def, it.ox, it.oy, it.od).forEach(function (q3) { c.strokeRect(q3[0] * s + 3, q3[1] * s + 3, s - 6, s - 6); }); });
+      c.setLineDash([]); c.globalAlpha = 1;
+    }
     if (hover) {
       var hx = hover.x * s, hy = hover.y * s, hi = hover.x + hover.y * COLS, ex = grid[hi];
       if (landMode) {
@@ -1096,6 +1135,20 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         }
       } else if (erase) {
         c.strokeStyle = T.bad; c.lineWidth = 2; c.strokeRect(hx + 1, hy + 1, s - 2, s - 2);
+      } else if (moveMode) {
+        if (moving) {
+          var mok = dropProblem(hover.x, hover.y) === '';
+          moving.items.forEach(function (it) {
+            var sp = placeSpot(it, hover.x, hover.y);
+            if (sp.x >= 0 && sp.y >= 0 && sp.x < COLS && sp.y < ROWS) { c.globalAlpha = 0.7; drawAny(c, it.m.def, sp.dir, sp.x * s, sp.y * s, s, tt, 0); c.globalAlpha = 1; }
+            c.strokeStyle = mok ? T.accent : T.bad; c.lineWidth = 2;
+            footprint(it.m.def, sp.x, sp.y, sp.dir).forEach(function (q3) { c.strokeRect(q3[0] * s + 1, q3[1] * s + 1, s - 2, s - 2); });
+          });
+        } else if (!marquee) {
+          c.strokeStyle = ex ? T.accent : T['belt-mark']; c.lineWidth = ex ? 2 : 1;
+          if (ex) footprint(ex.def, ex.x, ex.y, ex.dir).forEach(function (q3) { c.strokeRect(q3[0] * s + 1, q3[1] * s + 1, s - 2, s - 2); });
+          else c.strokeRect(hx + 1, hy + 1, s - 2, s - 2);
+        }
       } else if (selected) {
         var gd = directional(selected) ? dirNew : 0;
         var gRefund = 0;
@@ -1248,6 +1301,13 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (entry === c.dir) return (c.dir + 1) % 4;
       if (entry === (c.dir + 1) % 4) return c.dir;
       return travel;
+    }
+    if (kind === 'twoway') {
+      if (travel % 2 === c.dir % 2) return travel;       /* along the belt: straight on, in its own lane */
+      /* From the side: the ore joins the lane on the side it came in from. Lane `d` sits on the right-hand side of travelling `d`,
+         so pick the one whose lane is nearest the entry side (the side opposite to the way the ore is moving). */
+      var tv = DIRS[travel], r1 = DIRS[c.dir];
+      return (r1[1] * tv[0] - r1[0] * tv[1] > 0) ? c.dir : (c.dir + 2) % 4;
     }
     if (kind === 'cross') return travel;                 /* straight on, whichever way it came */
     if (kind === 'spin') return (travel + 1) % 4;        /* always a quarter turn to the right */
@@ -1421,6 +1481,69 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     clearMachine(c);
   }
 
+  /* Move mode. Click one item to lift it, or drag a box to lift everything inside it. Then click to set the whole group down.
+     Nothing is refunded or charged. Every piece must land on land you own, on empty tiles, and Ascended items on a glowing square. */
+  function placeSpot(it, tx, ty) {
+    var r = rot(it.dx, it.dy, moving.rot);
+    return { x: tx + r[0], y: ty + r[1], dir: directional(it.m.def) ? (it.od + moving.rot) % 4 : it.od };
+  }
+  function cancelMove() {
+    marquee = null;
+    if (!moving) return;
+    moving.items.forEach(function (it) { it.m.x = it.ox; it.m.y = it.oy; it.m.dir = it.od; stamp(it.m); });
+    moving = null;
+  }
+  function setMove(on) {
+    if (!on) cancelMove();
+    moveMode = on;
+    if (on) { selected = null; erase = false; landMode = false; }
+    syncModes();
+  }
+  function turnCarried() { if (moving) moving.rot = (moving.rot + 1) % 4; }
+  function liftMachines(list, ax, ay) {
+    moving = { items: list.map(function (c) { return { m: c, ox: c.x, oy: c.y, od: c.dir, dx: c.x - ax, dy: c.y - ay }; }), ax: ax, ay: ay, rot: 0 };
+    list.forEach(clearMachine);
+    ores = ores.filter(function (o) { return !!grid[o.i]; });   /* ore that was on them is lost */
+    note('Carrying ' + (list.length > 1 ? list.length + ' items' : list[0].def.name) + '. Click an empty spot to set ' + (list.length > 1 ? 'them' : 'it') + ' down, R to turn, Esc to put back.');
+  }
+  /* Where would the carried group land with its anchor on (tx, ty)? Returns '' if it fits, otherwise a reason. */
+  function dropProblem(tx, ty) {
+    for (var k = 0; k < moving.items.length; k++) {
+      var it = moving.items[k], sp = placeSpot(it, tx, ty), d = it.m.def;
+      if (!fits(d, sp.x, sp.y, sp.dir) || overlapped(d, sp.x, sp.y, sp.dir).length) return 'room';
+      if (d.asc && st.asc.indexOf(sp.x + sp.y * COLS) < 0) return 'asc';
+    }
+    return '';
+  }
+  function moveClick(p) {
+    if (!moving) return;
+    var why = dropProblem(p.x, p.y), many = moving.items.length > 1;
+    if (why === 'room') { note('No room there. ' + (many ? 'Every item in the group' : moving.items[0].m.def.name) + ' needs empty tiles on land you own.'); return; }
+    if (why === 'asc') { note('Ascended items only fit on the glowing squares.'); return; }
+    moving.items.forEach(function (it) {
+      var sp = placeSpot(it, p.x, p.y);
+      it.m.x = sp.x; it.m.y = sp.y; it.m.dir = sp.dir; stamp(it.m);
+    });
+    note('Moved ' + (many ? moving.items.length + ' items' : moving.items[0].m.def.name) + '. Pick up something else, or press Esc to finish.');
+    moving = null;
+  }
+  /* Called when the mouse is released in move mode with nothing carried: a plain click lifts one item, a drag lifts a box full. */
+  function finishMarquee(q) {
+    var x0 = Math.min(q.x0, q.x1), x1 = Math.max(q.x0, q.x1), y0 = Math.min(q.y0, q.y1), y1 = Math.max(q.y0, q.y1), list = [], x, y;
+    if (x0 === x1 && y0 === y1) {
+      var one = grid[x0 + y0 * COLS];
+      if (!one) { note('Click a placed item to pick it up, or drag a box around several.'); return; }
+      liftMachines([one], one.x, one.y);
+      return;
+    }
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+      var c = grid[x + y * COLS];
+      if (c && list.indexOf(c) < 0) list.push(c);
+    }
+    if (!list.length) { note('Nothing inside that box.'); return; }
+    liftMachines(list, x0, y0);
+  }
+
   function applyAt(p) {
     var i = p.x + p.y * COLS, ex = grid[i];
     if (paintMode === 'land') {
@@ -1483,7 +1606,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     var p = cellAt(e);
     if (!p) return;
     var bc = grid[p.x + p.y * COLS];
-    if (bc && bc.broken && !erase && !landMode && e.button !== 2) { hover = p; repair(bc); return; }
+    if (e.button === 2 && (moving || marquee)) { cancelMove(); hover = p; syncModes(); return; }
+    if (moveMode) {
+      hover = p;
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      if (moving) moveClick(p); else marquee = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+      return;
+    }
+    if (bc && bc.broken && !erase && !landMode && !moveMode && e.button !== 2) { hover = p; repair(bc); return; }
     try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
     hover = p; painting = true; lastCell = null;
     paintMode = (e.button === 2 || erase) ? 'erase' : landMode ? 'land' : (selected ? 'place' : 'rotate');
@@ -1492,9 +1622,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   canvas.addEventListener('pointermove', function (e) {
     var p = cellAt(e);
     hover = p;
+    if (marquee && p) { marquee.x1 = p.x; marquee.y1 = p.y; }
     if (painting && p && paintMode !== 'rotate' && (!lastCell || lastCell.x !== p.x || lastCell.y !== p.y)) applyAt(p);
   });
-  function endPaint() { painting = false; lastCell = null; }
+  function endPaint() { painting = false; lastCell = null; if (marquee) { var q = marquee; marquee = null; finishMarquee(q); } }
   canvas.addEventListener('pointerup', endPaint);
   canvas.addEventListener('pointercancel', endPaint);
   canvas.addEventListener('pointerleave', function () { if (!painting) hover = null; });
@@ -1517,6 +1648,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (d.kind === 'belt' && d.fx) return d.speed + ' cells per second. Makes ore ' + fxNote(d.fx);
     if (d.kind === 'belt' && d.stasis) return d.speed + ' cells per second. Effect timers freeze while ore rides it';
     if (d.kind === 'belt') return d.speed + ' cells per second' + (d.shape ? ', on every tile' : '');
+    if (d.kind === 'twoway') return d.speed + ' cells per second, in both directions at once. Ore keeps straight on in its own lane. Ore from the side joins the way the belt faces';
     if (d.kind === 'cross') return 'Ore goes straight through, so two lines can cross';
     if (d.kind === 'spin') return 'Turns every ore a quarter turn to the right';
     if (d.kind === 'tunnel') return 'Ore heading the way it faces jumps to the next ' + d.name + ' up to ' + d.range + ' tiles ahead. Needs two, same way round';
@@ -1637,15 +1769,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 
   function syncModes() {
     document.getElementById('btnErase').setAttribute('aria-pressed', erase ? 'true' : 'false');
+    document.getElementById('btnMove').setAttribute('aria-pressed', moveMode ? 'true' : 'false');
     document.getElementById('btnLand').setAttribute('aria-pressed', landMode ? 'true' : 'false');
     ITEMS.forEach(function (x) { rows[x.id].classList.toggle('sel', x === selected); });
     updateHint();
   }
-  function selectItem(d) { selected = d; if (d) { erase = false; landMode = false; } syncModes(); }
-  function setErase(on) { erase = on; if (on) { selected = null; landMode = false; } syncModes(); }
-  function setLand(on) { landMode = on; if (on) { selected = null; erase = false; } syncModes(); }
+  function selectItem(d) { selected = d; if (d) { cancelMove(); moveMode = false; erase = false; landMode = false; } syncModes(); }
+  function setErase(on) { erase = on; if (on) { cancelMove(); moveMode = false; selected = null; landMode = false; } syncModes(); }
+  function setLand(on) { landMode = on; if (on) { cancelMove(); moveMode = false; selected = null; erase = false; } syncModes(); }
   function updateHint() {
-    if (landMode) note('Buy land: click or drag over the outlined tiles next to your plot. Each tile costs more than the last.');
+    if (moveMode) note(moving ? 'Carrying ' + (moving.items.length > 1 ? moving.items.length + ' items' : moving.items[0].m.def.name) + '. Click an empty spot to set down, R to turn, Esc to put back.' : 'Move mode: click an item to pick it up, or drag a box around a row of items to lift them all. Then click where they should go. Nothing is refunded or charged.');
+    else if (landMode) note('Buy land: click or drag over the outlined tiles next to your plot. Each tile costs more than the last.');
     else if (erase) note('Remove mode. Click or drag over items to take them back at full price.');
     else if (selected && selected.kind === 'bend') note('Placing Corner belt for $' + fmt(selected.cost) + '. It joins the two sides its curve touches. R turns it through all four corners, and clicking a placed corner does the same.');
     else if (selected && selected.asc) note('Placing ' + selected.name + '. It costs nothing, but only fits on the glowing squares.');
@@ -1655,17 +1789,19 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     else note('A starter line is running. Pick an item from the catalogue, or click a placed item to turn it. Buy land to grow.');
   }
 
-  document.getElementById('btnRot').addEventListener('click', function () { dirNew = (dirNew + 1) % 4; });
+  document.getElementById('btnRot').addEventListener('click', function () { if (moving) turnCarried(); else dirNew = (dirNew + 1) % 4; });
+  document.getElementById('btnMove').addEventListener('click', function () { setMove(!moveMode); });
   document.getElementById('btnLand').addEventListener('click', function () { setLand(!landMode); });
   document.getElementById('btnErase').addEventListener('click', function () { setErase(!erase); });
-  document.getElementById('btnDesel').addEventListener('click', function () { erase = false; landMode = false; selectItem(null); });
+  document.getElementById('btnDesel').addEventListener('click', function () { cancelMove(); moveMode = false; erase = false; landMode = false; selectItem(null); });
   window.addEventListener('keydown', function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     var k = e.key.toLowerCase();
-    if (k === 'r') dirNew = (dirNew + 1) % 4;
+    if (k === 'r') { if (moving) turnCarried(); else dirNew = (dirNew + 1) % 4; }
+    else if (k === 'm') setMove(!moveMode);
     else if (k === 'x') setErase(!erase);
     else if (k === 'l') setLand(!landMode);
-    else if (k === 'escape') { erase = false; landMode = false; selectItem(null); }
+    else if (k === 'escape') { cancelMove(); moveMode = false; erase = false; landMode = false; selectItem(null); }
   });
 
   /* ---------- rebirth and reset ---------- */
