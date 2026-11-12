@@ -84,13 +84,37 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .btn[aria-pressed="true"], .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn:focus-visible, .row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-#surge { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 3; pointer-events: none; max-width: calc(100% - 24px); padding: 6px 14px; border-radius: 999px; border: 2px solid var(--bad); background: var(--bg); color: var(--bad); font: 600 13px/1.3 var(--mono, ui-monospace, monospace); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+#banners { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 3; pointer-events: none; width: calc(100% - 24px); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+#surge, #site { max-width: 100%; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--bad); background: var(--bg); color: var(--bad); font: 600 13px/1.3 var(--mono, ui-monospace, monospace); text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
+#site { border-color: #a03cff; color: #8a2be2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #site { color: #c78bff; } }
+:root[data-theme="dark"] #site { color: #c78bff; }
+@media (max-width: 600px) { #surge, #site { font-size: 11px; padding: 2px 10px; border-width: 1px; } #banners { top: 6px; gap: 3px; } }
+.pitem .sitebar > i { background: #a03cff; }
+.pitem.met .sitebar > i { background: var(--good, #2f9e62); }
 #hint { flex: 1 1 200px; min-width: 0; color: var(--ink-2); font-size: 13px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .rebirth { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px dashed var(--line); border-radius: 6px; }
 .rebirth .line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); }
 .rebirth .line b { font: 600 13px var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .rebirth p, .foot p { margin: 0; font-size: 12px; color: var(--ink-2); }
+details.prog { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+details.prog > summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; list-style: none; font: 600 12px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+details.prog > summary::-webkit-details-marker { display: none; }
+details.prog > summary .sub { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-2); font-size: 12px; text-align: right; }
+details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+.pitem { display: flex; flex-direction: column; gap: 5px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-2); }
+.pitem:first-child { border-top: 0; padding-top: 0; }
+.pitem .top { display: flex; justify-content: space-between; gap: 8px; color: var(--ink); font-size: 13px; }
+.pitem .top b { font: 600 12px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pitem .meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; min-width: 0; }
+.pitem .meta span { min-width: 0; }
+.pbar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.pbar > i { display: block; height: 100%; width: 0; background: var(--accent); }
+.pitem.done .pbar > i { background: var(--money); }
+.pitem .btns { display: flex; gap: 6px; flex: none; }
+.pitem .btn { padding: 4px 10px; font-size: 12px; }
+.chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 /* Shop groups are native <details> dropdowns, so they work with touch, mouse and keyboard on every platform.
    The summary is a full-width bar at least 44px tall, which is the smallest comfortable touch target. */
 #shop { display: flex; flex-direction: column; gap: 8px; }
@@ -143,7 +167,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   <main class="layout">
     <section class="stage" aria-label="Factory floor">
       <canvas id="c" aria-label="Factory floor grid"></canvas>
-      <div id="surge" role="status" hidden></div>
+      <div id="banners"><div id="surge" role="status" hidden></div><div id="site" role="status" hidden></div></div>
       <div class="toolbar">
         <button class="btn" id="btnRot" type="button">Rotate (R)</button>
         <button class="btn" id="btnLand" type="button" aria-pressed="false">Buy land (L)</button>
@@ -163,6 +187,10 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         <button class="btn primary" id="btnRebirth" type="button">Rebirth</button>
         <p>You get 20 rebirths, and each one needs 10 times more than the last. Each also gives you one Ascended item and one new square to place it on. Rebirth clears your cash, floor and land. Each rebirth also gives you exactly 1 core, which you can spend on Core tech below.</p>
       </div>
+      <details class="prog" id="siteBox" open hidden><summary>Extraction site <span class="sub" id="siteSub"></span></summary><div class="body" id="siteBody"></div></details>
+      <details class="prog" id="contractsBox" open><summary>Contracts <span class="sub" id="contractsSub"></span></summary><div class="body" id="contractsBody"></div></details>
+      <details class="prog" id="masteryBox"><summary>Mastery <span class="sub" id="masterySub"></span></summary><div class="body" id="masteryBody"></div></details>
+      <details class="prog" id="zonesBox"><summary>Map zones <span class="sub">tinted tiles</span></summary><div class="body" id="zonesBody"></div></details>
       <div id="shop"></div>
       <div class="foot">
         <button class="btn" id="btnReset" type="button">Reset save</button>
@@ -186,6 +214,143 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   /* Power surge event: each time your cash reaches a new money suffix (K, M, B, T...) there is a 1 in 20 chance of a surge,
      which halves the energy every coal ore gives for 5 minutes. Each suffix gets one roll per life. */
   var SURGE_CHANCE = 1 / 20, SURGE_SECONDS = 300, SURGE_FACTOR = 0.5;
+
+  /* ---------- Progression: mastery, contracts and zones ---------- */
+
+  /* MASTERY. Five tracks count how much work each kind of machine has done. They level up, each level gives a permanent +3%, and
+     they survive rebirth (only 'Reset save' clears them). Level n needs 100 x 3^(n-1) in total, up to level 15. */
+  var MAST = {
+    drill: { name: 'Drills',    unit: 'ore mined',        what: 'ore value' },
+    up:    { name: 'Upgraders', unit: 'ore upgraded',     what: 'upgrader strength' },
+    fur:   { name: 'Furnaces',  unit: 'ore sold',         what: 'sale value' },
+    belt:  { name: 'Belts',     unit: 'tiles travelled',  what: 'belt speed' },
+    power: { name: 'Power',     unit: 'coal burned',      what: 'energy per coal' }
+  };
+  var MAST_KINDS = ['drill', 'up', 'fur', 'belt', 'power'];
+  var MAST_BASE = 100, MAST_STEP = 3, MAST_MAX = 15, MAST_BONUS = 0.03;
+  var mastLvl = { drill: 0, up: 0, fur: 0, belt: 0, power: 0 }, mastBonus = { drill: 1, up: 1, fur: 1, belt: 1, power: 1 };
+  var mastNext = { drill: MAST_BASE, up: MAST_BASE, fur: MAST_BASE, belt: MAST_BASE, power: MAST_BASE };
+  function mastNeed(n) { return n <= 0 ? 0 : MAST_BASE * Math.pow(MAST_STEP, n - 1); }
+  /* Work out every track's level from its count. `announce` shows a message when a level was gained. */
+  function mastRefresh(announce) {
+    MAST_KINDS.forEach(function (k) {
+      var n = st.mast[k] || 0, L = 0;
+      while (L < MAST_MAX && n >= mastNeed(L + 1)) L++;
+      if (announce && L > mastLvl[k]) note('Mastery: ' + MAST[k].name + ' reached level ' + L + ' (+' + Math.round(MAST_BONUS * L * 100) + '% ' + MAST[k].what + ')');
+      mastLvl[k] = L; mastBonus[k] = 1 + MAST_BONUS * L; mastNext[k] = L >= MAST_MAX ? Infinity : mastNeed(L + 1);
+    });
+  }
+  /* Called once for every piece of work. It is on the hot path, so it only does a compare unless a level is gained. */
+  function mastCount(k) { if (++st.mast[k] >= mastNext[k]) mastRefresh(true); }
+
+  /* ZONES. Fixed patches of the map. A drill whose head tile sits on one changes the ore it makes. Zones show as tinted
+     tiles, even on land you have not bought yet, so they give you a reason to expand in a direction. */
+  var ZONES = {
+    rich:  { name: 'Rich vein',          color: '#e0b341', vmult: 1.5, note: 'drills here make ore worth ×1.5' },
+    seam:  { name: 'Coal seam',          color: '#8a9298', cmult: 2,   note: 'coal drills here are worth ×2' },
+    frost: { name: 'Frost patch',        color: '#7fd8ff', fx: 'frost', note: 'drills here make Frozen ore' },
+    rad:   { name: 'Radioactive patch',  color: '#3dff6a', fx: 'rad',   note: 'drills here make Irradiated ore' },
+    fire:  { name: 'Lava patch',         color: '#ff6a2b', fx: 'fire',  note: 'drills here make Burning ore' },
+    shock: { name: 'Storm patch',        color: '#ffe14a', fx: 'shock', note: 'drills here make Charged ore' }
+  };
+  /* [zone, centre x, centre y, radius]. A tile is in the zone when |dx| + |dy| <= radius. */
+  var ZONE_SPOTS = [['seam', 4, 6, 2], ['seam', 17, 6, 2], ['rich', 10, 1, 1], ['rich', 10, 12, 1], ['frost', 3, 2, 2], ['rad', 18, 2, 2], ['fire', 3, 11, 2], ['shock', 18, 11, 2]];
+  var zoneAt = new Array(N);
+  ZONE_SPOTS.forEach(function (z) {
+    for (var zy = z[2] - z[3]; zy <= z[2] + z[3]; zy++) for (var zx = z[1] - z[3]; zx <= z[1] + z[3]; zx++) {
+      if (zx < 0 || zy < 0 || zx >= COLS || zy >= ROWS || Math.abs(zx - z[1]) + Math.abs(zy - z[2]) > z[3]) continue;
+      if (!zoneAt[zx + zy * COLS]) zoneAt[zx + zy * COLS] = ZONES[z[0]];
+    }
+  });
+
+  /* EXTRACTION SITE. One event per life. After a few minutes of play, glowing purple squares appear on empty land you own.
+     Each asks for a number of ore (any ore, or one effect, or one shape). Belt ore into the squares before the clock runs out.
+     Fill them all and every sale pays double for 2 minutes. Run out of time and every machine breaks.
+     More squares appear the later your life: 1 on life 1, plus 1 every 2 lives, up to 10. */
+  var SITE_SECONDS = 240, SITE_BOOM_SECONDS = 120, SITE_BOOM = 2, SITE_EARLIEST = 360, SITE_LATEST = 720, SITE_SHARE = 0.4, SITE_MAX_GRIDS = 10;
+  var SHAPE_GLYPH = { sq: '■', tri: '▲', dia: '◆', hex: '⬢', star: '★' };
+  var siteAt = new Array(N);   /* tile index -> that tile's requirement, or empty. Rebuilt by siteSync() from st.site. */
+  function siteGridCount(life) { return Math.min(SITE_MAX_GRIDS, 1 + Math.floor((life - 1) / 2)); }
+  function siteSync() {
+    for (var q = 0; q < N; q++) siteAt[q] = null;
+    if (st.site) st.site.grids.forEach(function (g) { siteAt[g.i] = g; });
+  }
+  function siteReset() { st.lifeT = 0; st.siteGo = 0; st.siteDone = 0; st.site = null; st.boom = 0; siteSync(); }
+  function siteReq(g) {
+    return 'Deliver ' + fmt(g.n) + (g.t === 'fx' ? ' ' + FX[g.k].name.toLowerCase() + ' ore' : g.t === 'sh' ? ' ' + SHAPES[g.k] + ' ore' : ' ore');
+  }
+  /* The effects and shapes your floor can actually make right now, so a requirement is never impossible. */
+  function siteTypes() {
+    var seen = {}, out = [];
+    for (var q = 0; q < N; q++) {
+      var g = grid[q]; if (!g || !isHead(g, q) || g.broken) continue;
+      var d = g.def, zn = zoneAt[q];
+      if (d.fx && d.kind !== 'fur' && !seen['f' + d.fx]) { seen['f' + d.fx] = 1; out.push({ t: 'fx', k: d.fx }); }
+      if (d.kind === 'drill' && !d.coal && zn && zn.fx && !d.fx && !seen['f' + zn.fx]) { seen['f' + zn.fx] = 1; out.push({ t: 'fx', k: zn.fx }); }
+      if (d.oreSh && !seen['s' + d.oreSh]) { seen['s' + d.oreSh] = 1; out.push({ t: 'sh', k: d.oreSh }); }
+    }
+    return out;
+  }
+  function siteReady() {
+    var drills = 0, furs = 0;
+    for (var q = 0; q < N; q++) { var g = grid[q]; if (!g || !isHead(g, q) || g.broken) continue; if (g.def.kind === 'drill' && !g.def.coal) drills++; else if (g.def.kind === 'fur') furs++; }
+    return drills > 0 && furs > 0;
+  }
+  /* Pick empty owned tiles, preferring ones at least 3 apart so the squares do not clump. Returns false if there is no room. */
+  function startSite() {
+    var free = [], q, k;
+    for (q = 0; q < N; q++) if (owned[q] && !grid[q]) free.push(q);
+    if (!free.length) return false;
+    for (k = free.length - 1; k > 0; k--) { var r = Math.floor(Math.random() * (k + 1)), tmp = free[k]; free[k] = free[r]; free[r] = tmp; }
+    var want = Math.min(siteGridCount(st.rebirths + 1), free.length), pick = [];
+    free.forEach(function (f) {
+      if (pick.length < want && pick.every(function (p2) { return Math.abs(p2 % COLS - f % COLS) + Math.abs(Math.floor(p2 / COLS) - Math.floor(f / COLS)) >= 3; })) pick.push(f);
+    });
+    free.forEach(function (f) { if (pick.length < want && pick.indexOf(f) < 0) pick.push(f); });
+    /* The ask is a share of what your drills can make in the time allowed, split between the squares. A typed square is half as big,
+       because only some of your ore will have that effect or shape. */
+    var typed = siteTypes(), per = Math.max(30, oreRate(false) * SITE_SECONDS * SITE_SHARE) / pick.length;
+    var grids = pick.map(function (i) {
+      var t = (typed.length && Math.random() < 0.6) ? typed[Math.floor(Math.random() * typed.length)] : { t: 'any' };
+      return { i: i, t: t.t, k: t.k, n: Math.max(8, Math.round(per * (t.t === 'any' ? 1 : 0.5))), p: 0 };
+    });
+    st.site = { left: SITE_SECONDS, grids: grids }; st.siteDone = 1; siteSync();
+    note('EXTRACTION SITE! ' + grids.length + (grids.length > 1 ? ' purple squares have' : ' purple square has') + ' appeared. Belt ore into ' + (grids.length > 1 ? 'them' : 'it') + ' within 4 minutes.');
+    return true;
+  }
+  /* An ore reaches a purple square. A matching ore counts. Anything else is lost, like ore sent into a wall. */
+  function siteDeliver(o, g) {
+    var good = !o.coal && (g.t === 'any' || (g.t === 'fx' && o.fx === g.k) || (g.t === 'sh' && o.sh === g.k));
+    if (!good) { waste({ x: g.i % COLS, y: Math.floor(g.i / COLS) }); return; }
+    if (g.p < g.n) g.p++;
+  }
+  function siteWin() {
+    st.boom = SITE_BOOM_SECONDS; st.site = null; siteSync();
+    note('Extraction complete! Every sale pays ×' + SITE_BOOM + ' for 2 minutes.');
+  }
+  function siteFail() {
+    var n = 0;
+    for (var q = 0; q < N; q++) { var g = grid[q]; if (g && isHead(g, q) && !g.broken && breakable(g.def)) { g.broken = true; g.weak = false; n++; } }
+    st.site = null; siteSync();
+    note('Extraction failed! ' + n + ' machines broke. Click each one to repair it.');
+  }
+  function siteTick(dt) {
+    if (st.boom > 0) st.boom = Math.max(0, st.boom - dt);
+    st.lifeT += dt;
+    if (st.site) {
+      st.site.left -= dt;
+      if (st.site.grids.every(function (g) { return g.p >= g.n; })) siteWin();
+      else if (st.site.left <= 0) siteFail();
+    } else if (!st.siteDone) {
+      if (!st.siteGo) st.siteGo = SITE_EARLIEST + Math.random() * (SITE_LATEST - SITE_EARLIEST);
+      /* Not while an item is being carried: its old tiles look empty and would be picked. If it cannot start, try again in 5 s. */
+      if (st.lifeT >= st.siteGo && !moving) { if (!(siteReady() && startSite())) st.siteGo = st.lifeT + 5; }
+    }
+  }
+
+  /* CONTRACTS. Three goals at a time. They are sized from what your drills can actually make, so they stay fair as you grow.
+     Slots 1 and 2 pay cash worth about 75 seconds of your income. Slot 3 is harder and pays 1 core, up to 2 a life, then cash. */
+  var CONTRACT_SLOTS = 3, CONTRACT_CORES_PER_LIFE = 2, CONTRACT_SECONDS = 75, HARD_FACTOR = 2.5;
 
   /* Footprints. Each is a list of [dx, dy] tile offsets seen from the item's own point of view while it faces right (direction 0).
      [0, 0] is always the "head" tile: the one that carries the picture, and for drills the one ore leaves from.
@@ -479,7 +644,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   }
 
   /* ---------- state ---------- */
-  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [], surge: 0, tier: 0 };
+  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [], surge: 0, tier: 0, mast: { drill: 0, up: 0, fur: 0, belt: 0, power: 0 }, contracts: [], contractCores: 0, contractsDone: 0, lifeT: 0, siteGo: 0, siteDone: 0, site: null, boom: 0 };
   var capNow = BASE_CAP, effNow = 1, effRaw = 1, effS = 1, demandNow = 0, outage = 0, brokenCount = 0, weakCount = 0;
   /* How well a machine runs. Ordinary machines never drop below 30%. Ascended machines drop to 0. */
   function effOf(def) { return def.draw ? (def.asc ? effRaw : effNow) : 1; }
@@ -557,6 +722,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     for (var k = 0; k < f.length; k++) {
       var cx = f[k][0], cy = f[k][1];
       if (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS || !owned[cx + cy * COLS]) return false;
+      if (siteAt[cx + cy * COLS]) return false;   /* an Extraction Site square: no building on it */
       if (self !== undefined) { var o = grid[cx + cy * COLS]; if (o && o !== self) return false; }
     }
     return true;
@@ -616,7 +782,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (moving) moving.items.forEach(function (it) { cells.push([it.ox, it.oy, it.m.def.id, it.od, it.m.broken ? 1 : 0, it.m.weak ? 1 : 0]); });
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         cash: st.cash, run: st.run, total: st.total, cores: st.cores, spent: st.spent, rebirths: st.rebirths,
-        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, surge: st.surge, tier: st.tier, land: land, cells: cells
+        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, surge: st.surge, tier: st.tier, mast: st.mast, contracts: st.contracts, cc: st.contractCores, cd: st.contractsDone, lt: st.lifeT, sg: st.siteGo, sd: st.siteDone, site: st.site, boom: st.boom, land: land, cells: cells
       }));
     } catch (e) {}
   }
@@ -634,6 +800,24 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       st.asc = Array.isArray(d.asc) ? d.asc.filter(function (i) { return i >= 0 && i < N; }) : [];
       while (st.asc.length < Math.min(st.rebirths, ASC_ORDER.length)) grantNext();
       st.surge = Math.max(0, Math.min(SURGE_SECONDS, +d.surge || 0));
+      MAST_KINDS.forEach(function (k) { st.mast[k] = (d.mast && isFinite(+d.mast[k]) && +d.mast[k] > 0) ? +d.mast[k] : 0; });
+      mastRefresh(false);
+      st.contracts = Array.isArray(d.contracts) ? d.contracts.filter(function (c) {
+        return c && ['mine', 'sell', 'fx', 'sh', 'energy', 'have', 'land'].indexOf(c.t) >= 0 && isFinite(+c.n) && +c.n > 0 && isFinite(+c.p) && +c.p >= 0 &&
+          /* the extra key must name something real, or the panel would crash on it */
+          (c.t === 'fx' ? !!FX[c.k] : c.t === 'sh' ? !!SHAPES[c.k] : c.t === 'have' ? ['fur', 'up', 'drill'].indexOf(c.k) >= 0 : true);
+      }).slice(0, CONTRACT_SLOTS).map(function (c) { return { t: c.t, k: c.k, n: +c.n, p: Math.min(+c.p, +c.n), hard: !!c.hard }; }) : [];
+      st.contractCores = Math.max(0, +d.cc | 0); st.contractsDone = Math.max(0, +d.cd | 0);
+      st.lifeT = Math.max(0, +d.lt || 0); st.siteGo = Math.max(0, +d.sg || 0); st.siteDone = d.sd ? 1 : 0; st.boom = Math.max(0, Math.min(SITE_BOOM_SECONDS, +d.boom || 0));
+      st.site = null;
+      if (d.site && isFinite(+d.site.left) && +d.site.left > 0 && Array.isArray(d.site.grids)) {
+        var sg = d.site.grids.filter(function (g) {
+          return g && (g.i | 0) === g.i && g.i >= 0 && g.i < N && isFinite(+g.n) && +g.n > 0 && isFinite(+g.p) && +g.p >= 0 &&
+            (g.t === 'any' || (g.t === 'fx' && !!FX[g.k]) || (g.t === 'sh' && !!SHAPES[g.k]));
+        }).slice(0, SITE_MAX_GRIDS).map(function (g) { return { i: g.i, t: g.t, k: g.t === 'any' ? undefined : g.k, n: +g.n, p: Math.min(+g.p, +g.n) }; });
+        if (sg.length) { st.site = { left: Math.min(SITE_SECONDS, +d.site.left), grids: sg }; st.siteDone = 1; }
+      }
+      siteSync();
       /* An older save has no tier: start from where its cash already is, so loading does not roll for every suffix at once. */
       st.tier = d.tier != null ? Math.max(0, Math.min(14, d.tier | 0)) : cashTier(st.cash);
       resetLand();
@@ -1067,10 +1251,39 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     c.stroke();
 
+    /* Zone tints. Brighter on land you own, fainter under the fog so you can see where to expand. */
+    for (i = 0; i < N; i++) {
+      var zt = zoneAt[i]; if (!zt) continue;
+      var zx0 = (i % COLS) * s, zy0 = Math.floor(i / COLS) * s;
+      c.fillStyle = zt.color; c.globalAlpha = owned[i] ? 0.26 : 0.16; c.fillRect(zx0, zy0, s, s);
+      c.globalAlpha = owned[i] ? 0.5 : 0.3; c.beginPath(); c.arc(zx0 + s * 0.5, zy0 + s * 0.5, s * 0.07, 0, Math.PI * 2); c.fill();
+    }
+    c.globalAlpha = 1;
+
     c.strokeStyle = T.grid; c.lineWidth = 1; c.beginPath();
     for (x = 1; x < COLS; x++) { c.moveTo(Math.round(x * s) + 0.5, 0); c.lineTo(Math.round(x * s) + 0.5, canvas.height); }
     for (y = 1; y < ROWS; y++) { c.moveTo(0, Math.round(y * s) + 0.5); c.lineTo(canvas.width, Math.round(y * s) + 0.5); }
     c.stroke();
+
+    /* Extraction Site squares: a pulsing purple glow that fills from the bottom as ore arrives. */
+    if (st.site) {
+      var spl = reduce ? 0.7 : 0.55 + 0.3 * Math.sin(time * 3);
+      st.site.grids.forEach(function (g) {
+        var gx = (g.i % COLS) * s, gy = Math.floor(g.i / COLS) * s, fr = Math.min(1, g.p / g.n), met = g.p >= g.n;
+        c.save();
+        c.shadowColor = met ? '#4dff9a' : '#b455ff'; c.shadowBlur = s * 0.55 * (met ? 0.6 : spl);
+        c.fillStyle = met ? 'rgba(60,220,140,0.30)' : 'rgba(160,60,255,0.30)'; c.fillRect(gx + 2, gy + 2, s - 4, s - 4);
+        c.shadowBlur = 0;
+        c.fillStyle = met ? 'rgba(90,255,170,0.55)' : 'rgba(205,130,255,0.55)'; c.fillRect(gx + 2, gy + s - 2 - (s - 4) * fr, s - 4, (s - 4) * fr);
+        c.globalAlpha = met ? 1 : spl + 0.25; c.strokeStyle = met ? '#7dffb0' : '#c06bff'; c.lineWidth = Math.max(2, s * 0.08); c.strokeRect(gx + 3, gy + 3, s - 6, s - 6);
+        c.globalAlpha = 1; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff';
+        c.font = '700 ' + Math.max(9, Math.round(s * 0.28)) + 'px ' + MONO;
+        c.fillText(met ? '✓' : fmt(g.n - g.p), gx + s / 2, gy + s * 0.62);
+        var gl = g.t === 'any' ? '' : g.t === 'sh' ? SHAPE_GLYPH[g.k] : FX[g.k].name.charAt(0);
+        if (gl) { c.font = '700 ' + Math.max(8, Math.round(s * 0.24)) + 'px ' + MONO; c.fillStyle = g.t === 'fx' ? FX[g.k].color : '#fff'; c.fillText(gl, gx + s / 2, gy + s * 0.28); }
+        c.restore();
+      });
+    }
 
     if (st.asc.length) {
       var pul = reduce ? 0.7 : 0.6 + 0.25 * Math.sin(time * 2.2);
@@ -1132,6 +1345,24 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     if (hover) {
       var hx = hover.x * s, hy = hover.y * s, hi = hover.x + hover.y * COLS, ex = grid[hi];
+      var zh = zoneAt[hi];
+      var sh2 = siteAt[hi];
+      if (sh2) {
+        var sf = Math.max(11, Math.round(s * 0.3)), st2 = 'Extraction square: ' + fmt(sh2.p) + ' / ' + siteReq(sh2).replace('Deliver ', '') + ' · belt ore into it';
+        c.save(); c.font = '600 ' + sf + 'px ' + MONO; c.textAlign = 'left'; c.textBaseline = 'middle';
+        var sw2 = c.measureText(st2).width + sf * 1.4, shh = sf * 1.9, sy2 = canvas.height - shh * 2 - 14;
+        c.fillStyle = 'rgba(12,18,17,0.9)'; c.fillRect(8, sy2, sw2, shh);
+        c.fillStyle = '#b455ff'; c.fillRect(8, sy2, 4, shh);
+        c.fillStyle = '#e8f0ee'; c.fillText(st2, 8 + sf * 0.9, sy2 + shh / 2); c.restore();
+      }
+      if (zh) {   /* what the zone under the mouse does, in a label along the bottom edge */
+        var zf = Math.max(11, Math.round(s * 0.3)), zt2 = zh.name + ': ' + zh.note;
+        c.save(); c.font = '600 ' + zf + 'px ' + MONO; c.textAlign = 'left'; c.textBaseline = 'middle';
+        var zw = c.measureText(zt2).width + zf * 1.4, zhh = zf * 1.9;
+        c.fillStyle = 'rgba(12,18,17,0.88)'; c.fillRect(8, canvas.height - zhh - 8, zw, zhh);
+        c.fillStyle = zh.color; c.fillRect(8, canvas.height - zhh - 8, 4, zhh);
+        c.fillStyle = '#e8f0ee'; c.fillText(zt2, 8 + zf * 0.9, canvas.height - zhh / 2 - 8); c.restore();
+      }
       if (landMode) {
         if (buyable(hover.x, hover.y)) {
           var lc = landCost(), afford = st.cash >= lc;
@@ -1235,7 +1466,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       var win = Math.random() < (f.def.qP != null ? f.def.qP : 0.5);
       qm = win ? 8 : 0.1; qs = win ? '↑ ' : '↓ ';
     }
-    var gain = o.v * m * fxm * shm * qm;
+    var gain = o.v * m * fxm * shm * qm * mastBonus.fur * (st.boom > 0 ? SITE_BOOM : 1);
+    mastCount('fur'); contractEvent('sell', 1); if (o.fx) contractEvent('fx', 1, o.fx); if (o.sh) contractEvent('sh', 1, o.sh);
     st.cash += gain; st.run += gain; st.total += gain; earnedAcc += gain;
     f.pulse = 0.25;
     if (floaters.length < 22) floaters.push({ x: f.x + 0.5, y: f.y + 0.1, txt: qs + '+$' + fmt(gain), age: 0 });
@@ -1244,6 +1476,82 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   function waste(n) {
     if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '×', age: 0, bad: true });
   }
+  /* ----- contracts ----- */
+  function oreRate(coal) {
+    var r = 0;
+    for (var q = 0; q < N; q++) { var g = grid[q]; if (g && isHead(g, q) && g.def.kind === 'drill' && !g.broken && !!g.def.coal === coal) r += 1 / g.def.interval; }
+    return r;
+  }
+  function countKind(kind) {
+    var n = 0;
+    for (var q = 0; q < N; q++) { var g = grid[q]; if (g && isHead(g, q) && !g.broken && g.def.kind === kind && !g.def.coal) n++; }
+    return n;
+  }
+  /* Could the player make use of this item right now? Used so contracts only ask for things within reach. */
+  function reachable(d) { return !d.asc && (!d.core || st.unlocked[d.id]) && d.cost <= (st.cash + st.run) * 3 + 200; }
+  var KIND_WORD = { fur: 'furnaces', up: 'upgraders', drill: 'drills' };
+  function contractText(c) {
+    var n = fmt(c.n);
+    if (c.t === 'mine') return 'Mine ' + n + ' ore';
+    if (c.t === 'sell') return 'Sell ' + n + ' ore';
+    if (c.t === 'fx') return 'Sell ' + n + ' ' + FX[c.k].name.toLowerCase() + ' ore';
+    if (c.t === 'sh') return 'Sell ' + n + ' ' + SHAPES[c.k] + ' ore';
+    if (c.t === 'energy') return 'Burn ' + n + ' coal in converters';
+    if (c.t === 'have') return 'Have ' + n + ' ' + KIND_WORD[c.k] + ' placed at once';
+    return 'Own ' + n + ' tiles of land';
+  }
+  function contractReward(c) { return (c.hard && st.contractCores < CONTRACT_CORES_PER_LIFE) ? '1 core' : 'about ' + (c.hard ? 4 : 1) * CONTRACT_SECONDS + 's of income'; }
+  function newContract(slot) {
+    var hard = slot === CONTRACT_SLOTS - 1, f = hard ? HARD_FACTOR : 1, rate = oreRate(false), crate = oreRate(true), opts = [];
+    if (rate > 0) {
+      opts.push({ t: 'mine', n: Math.max(10, Math.round(rate * 100 * f)) });
+      opts.push({ t: 'sell', n: Math.max(10, Math.round(rate * 90 * f)) });
+      ITEMS.forEach(function (d) {
+        if (!reachable(d)) return;
+        if (d.fx && d.kind !== 'fur') opts.push({ t: 'fx', k: d.fx, n: Math.max(8, Math.round(rate * 45 * f)) });
+        if (d.oreSh) opts.push({ t: 'sh', k: d.oreSh, n: Math.max(8, Math.round(rate * 45 * f)) });
+      });
+    }
+    if (crate > 0) opts.push({ t: 'energy', n: Math.max(10, Math.round(crate * 90 * f)) });
+    ['fur', 'up', 'drill'].forEach(function (k) {
+      if (ITEMS.some(function (d) { return d.kind === k && reachable(d) && !d.coal; })) opts.push({ t: 'have', k: k, n: countKind(k) + (hard ? 3 : 2) });
+    });
+    if (ownedCount < N - 12) opts.push({ t: 'land', n: ownedCount + (hard ? 12 : 6) });
+    opts = opts.filter(function (o) { return !st.contracts.some(function (c) { return c.t === o.t && c.k === o.k; }); });
+    if (!opts.length) opts.push({ t: 'sell', n: 25 });
+    var pick = opts[Math.floor(Math.random() * opts.length)];
+    return { t: pick.t, k: pick.k, n: pick.n, p: 0, hard: hard };
+  }
+  /* Progress from things that happen (a sale, an ore mined). `k` is the effect or shape for the ones that care. */
+  function contractEvent(t, n, k) {
+    for (var j = 0; j < st.contracts.length; j++) {
+      var c = st.contracts[j];
+      if (c.t === t && (c.k === undefined || c.k === k) && c.p < c.n) c.p = Math.min(c.n, c.p + n);
+    }
+  }
+  /* Progress from the state of the floor (how many furnaces stand, how much land you own). */
+  function contractPoll() {
+    for (var j = 0; j < st.contracts.length; j++) {
+      var c = st.contracts[j];
+      if (c.t === 'have') c.p = Math.min(c.n, countKind(c.k)); else if (c.t === 'land') c.p = Math.min(c.n, ownedCount);
+    }
+  }
+  function ensureContracts() { while (st.contracts.length < CONTRACT_SLOTS) st.contracts.push(newContract(st.contracts.length)); }
+  function replaceContract(j) { st.contracts.splice(j, 1); var nc = newContract(j); st.contracts.splice(j, 0, nc); }
+  function claimContract(j) {
+    var c = st.contracts[j];
+    if (!c || c.p < c.n) return;
+    if (c.hard && st.contractCores < CONTRACT_CORES_PER_LIFE) { st.cores += 1; st.contractCores++; note('Contract done: +1 core.'); }
+    else {
+      var r = Math.max(50, inc * CONTRACT_SECONDS * (c.hard ? 4 : 1));
+      st.cash += r; st.run += r; st.total += r;
+      note('Contract done: +$' + fmt(r) + '.');
+    }
+    st.contractsDone++;
+    replaceContract(j);
+  }
+  function skipContract(j) { if (st.contracts[j]) replaceContract(j); }
+
   /* The money suffix tier of an amount: 0 below $1K, 1 for K, 2 for M, and so on (one step per three zeros). */
   function cashTier(n) { var t = 0; while (t < 14 && n >= Math.pow(1000, t + 1)) t++; return t; }
   function startSurge() {
@@ -1258,7 +1566,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   }
 
   function convert(o, n) {
-    var e = o.v * n.def.rate * (st.surge > 0 ? SURGE_FACTOR : 1);
+    var e = o.v * n.def.rate * (st.surge > 0 ? SURGE_FACTOR : 1) * mastBonus.power;
+    mastCount('power'); contractEvent('energy', 1);
     st.energy = Math.min(capNow, st.energy + e);
     n.pulse = 0.25;
     if (floaters.length < 22) floaters.push({ x: n.x + 0.5, y: n.y + 0.1, txt: '+' + fmt(e) + ' E', age: 0, pw: true });
@@ -1385,7 +1694,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   function tick(dt) {
     time += dt;
     if (st.surge > 0) st.surge = Math.max(0, st.surge - dt);
-    checkSurge();
+    checkSurge(); siteTick(dt);
     var i, k, demand = 0, cap = BASE_CAP, brokenN = 0, weakN = 0;
     for (i = 0; i < N; i++) {
       var g = grid[i];
@@ -1426,7 +1735,11 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           if (ores.length < CAP) {
             c.timer -= c.def.interval;
             var born = { i: i, x: c.x, y: c.y, t: 0.5, from: c.dir, out: c.dir, v: c.def.value, coal: !!c.def.coal, age: 0, seen: [], flash: 0, sh: c.def.oreSh || null };
+            var zn = zoneAt[i];   /* the zone under the drill's head tile */
+            if (!born.coal) { born.v *= mastBonus.drill; if (zn && zn.vmult) born.v *= zn.vmult; mastCount('drill'); contractEvent('mine', 1); }
+            else if (zn && zn.cmult) born.v *= zn.cmult;
             if (c.def.fx && !born.coal) setFx(born, c.def.fx);
+            else if (zn && zn.fx && !born.coal) setFx(born, zn.fx);
             ores.push(born);
           } else { c.timer = c.def.interval; }
         }
@@ -1441,7 +1754,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
       if (!cc || cc.def.kind === 'fur' || cc.def.kind === 'conv' || cc.def.kind === 'bat' || o.age > 90) { ores.splice(k, 1); continue; }
       if (o.fx === 'rad') o.v *= 1 + 0.08 * dt;          /* radiation grows the ore... */
       else if (o.fx === 'acid') o.v *= 1 - 0.05 * dt;    /* ...acid eats it */
-      o.t += (cc.def.speed || 2) * dt * effCell(cc) * (o.fx === 'chrono' ? 1.8 : 1);
+      o.t += (cc.def.speed || 2) * dt * effCell(cc) * (o.fx === 'chrono' ? 1.8 : 1) * (BELT_KINDS[cc.def.kind] ? mastBonus.belt : 1);
       if (o.flash > 0) o.flash -= dt;
       /* An effect belt marks any ore that is past the middle of its tile. Marking twice changes nothing, so no `seen` needed. */
       if (cc.def.fx && cc.def.kind === 'belt' && o.t >= 0.5 && !o.coal) setFx(o, cc.def.fx);
@@ -1452,7 +1765,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
           o.seen.push(mk); o.flash = 0.25;
           if (!cc.broken && Math.random() < effCell(cc)) {
             /* Read the ore's effect BEFORE this machine sets its own, so a Resonance tank rewards what came in. */
-            o.v *= (cc.def.fxMult && o.fx) ? cc.def.fxMult : cc.def.mult;
+            o.v *= ((cc.def.fxMult && o.fx) ? cc.def.fxMult : cc.def.mult) * mastBonus.up; mastCount('up');
             if (cc.def.fx) setFx(o, cc.def.fx);
             if (cc.def.oreSh) o.sh = cc.def.oreSh;
             /* Mitosis: the ore splits in two. Each half carries the full multiplier, so the pair is worth double. */
@@ -1471,12 +1784,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
         var d = DIRS[o.out], nx = o.x + d[0], ny = o.y + d[1];
         if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) { ores.splice(k, 1); continue; }
         var ni = nx + ny * COLS, n = grid[ni];
+        if (!n && siteAt[ni]) { siteDeliver(o, siteAt[ni]); ores.splice(k, 1); continue; }
         if (!n || n.def.kind === 'drill' || n.def.kind === 'bat') { ores.splice(k, 1); continue; }
         if (n.def.kind === 'fur') { if (o.coal || n.broken) waste(n); else sell(o, n); ores.splice(k, 1); continue; }
         if (n.def.kind === 'conv') { if (o.coal) convert(o, n); else waste(n); ores.splice(k, 1); continue; }
         if (n.def.kind === 'tele') { if (!n.broken && teleport(o, n)) continue; waste(n); ores.splice(k, 1); continue; }
         if (n.def.kind === 'tunnel' && o.out === n.dir && dive(o, n, nx, ny)) continue;
         o.x = nx; o.y = ny; o.i = ni; o.from = o.out; o.t -= 1; o.out = exitDir(n, o.from, nx, ny, o);
+        if (BELT_KINDS[n.def.kind]) mastCount('belt');
       }
     }
     spreadRad(dt);
@@ -1584,6 +1899,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     }
     var def = selected;
     if (!def || !owned[i]) { lastCell = p; return; }
+    if (siteAt[i]) { note('That is an Extraction Site square. Belt ore into it instead of building on it.'); lastCell = p; return; }
     if (def.core && !st.unlocked[def.id]) return;
     if (def.asc) {
       if (st.asc.indexOf(i) < 0) { note('Ascended items only fit on the glowing squares.'); lastCell = p; return; }
@@ -1854,14 +2170,14 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   twoStep(btnRebirth, rebirthLabel, 'Press again to confirm', function () {
     var g = rebirthGain();
     if (g < 1) return;
-    st.cores += g; st.rebirths += 1; st.cash = 40; st.run = 0; st.energy = BASE_CAP; st.tier = 0;
+    st.cores += g; st.rebirths += 1; st.cash = 40; st.run = 0; st.energy = BASE_CAP; st.tier = 0; st.surge = 0; st.contracts = []; st.contractCores = 0; siteReset();
     grantNext();
     resetFloor(); save();
     var reward = BY_ID[ASC_ORDER[st.asc.length - 1]];
     if (reward) note('Rebirth reward: ' + reward.name + ', plus a new glowing square to place it on.');
   });
   twoStep(btnReset, function () { return 'Reset save'; }, 'Press again to erase everything', function () {
-    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = []; st.surge = 0; st.tier = 0;
+    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = []; st.surge = 0; st.tier = 0; st.contracts = []; st.contractCores = 0; st.contractsDone = 0; siteReset(); MAST_KINDS.forEach(function (k) { st.mast[k] = 0; }); mastRefresh(false);
     if (selected && (selected.core || selected.asc)) selectItem(null);
     resetFloor(); save();
   });
@@ -1874,9 +2190,92 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   var elPow = document.getElementById('pow'), elPowLabel = document.getElementById('powLabel');
   var uiT = 0, incT = 0, themeT = 0, saveT = 0;
   var elSurge = document.getElementById('surge'), surgeShown = '';
+  var elSite = document.getElementById('site'), siteShown = '', siteRows = [];
+  var elSiteBox = document.getElementById('siteBox'), elSiteBody = document.getElementById('siteBody'), siteInfo = null;
+  function narrowScreen() { try { return window.matchMedia('(max-width: 600px)').matches; } catch (e) { return false; } }
+  function clock(sec) { sec = Math.ceil(sec); return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+  /* Banner on the floor plus a panel listing every square. The panel rows are rebuilt only when the number of squares changes. */
+  function updateSiteUI() {
+    var txt = '', on = !!st.site || st.boom > 0;
+    if (st.site) { var dn = st.site.grids.filter(function (g) { return g.p >= g.n; }).length; txt = '\u25C8 ' + (narrowScreen() ? 'SITE ' : 'EXTRACTION SITE ') + clock(st.site.left) + ' \u00b7 ' + dn + '/' + st.site.grids.length; }
+    else if (st.boom > 0) txt = '\u25C8 SITE BONUS \u00d7' + SITE_BOOM + ' SALES ' + clock(st.boom);
+    if (txt !== siteShown) { siteShown = txt; elSite.hidden = !txt; elSite.textContent = txt; }
+    elSiteBox.hidden = !on;
+    if (!on) return;
+    if (!siteInfo) {
+      siteInfo = mk('div', '', elSiteBody, 'Belt ore into the purple squares before time runs out. Fill them all: every sale pays \u00d7' + SITE_BOOM + ' for 2 minutes. Fail: every machine breaks. Wrong ore sent in is lost.');
+      /* One row per possible square, built once. Rows beyond the current count are simply hidden. */
+      for (var r = 0; r < SITE_MAX_GRIDS; r++) {
+        var box = mk('div', 'pitem', elSiteBody), top = mk('div', 'top', box), title = mk('span', '', top), cnt = mk('b', '', top);
+        var bar = mk('div', 'pbar sitebar', box), fill = mk('i', '', bar), meta = mk('div', 'meta', box), where = mk('span', '', meta);
+        siteRows.push({ box: box, title: title, cnt: cnt, fill: fill, where: where });
+      }
+    }
+    document.getElementById('siteSub').textContent = st.site ? clock(st.site.left) + ' left' : '\u00d7' + SITE_BOOM + ' sales ' + clock(st.boom);
+    var grids = st.site ? st.site.grids : [];
+    siteRows.forEach(function (e, j) {
+      var g = grids[j]; e.box.hidden = !g; if (!g) return;
+      e.title.textContent = siteReq(g); e.cnt.textContent = fmt(g.p) + ' / ' + fmt(g.n);
+      e.fill.style.width = Math.round(100 * Math.min(1, g.p / g.n)) + '%';
+      e.where.textContent = 'Square at column ' + (g.i % COLS + 1) + ', row ' + (Math.floor(g.i / COLS) + 1);
+      e.box.classList.toggle('met', g.p >= g.n);
+    });
+  }
+
+  /* Progression panels. Built once; updateProgress() only changes text and bar widths. */
+  var contractEls = [], masteryEls = {};
+  function mk(tag, cls, parent, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+  (function buildProgress() {
+    var cb = document.getElementById('contractsBody'), mb = document.getElementById('masteryBody'), zb = document.getElementById('zonesBody');
+    for (var j = 0; j < CONTRACT_SLOTS; j++) {
+      (function (j) {
+        var box = mk('div', 'pitem', cb), top = mk('div', 'top', box), title = mk('span', '', top), tag = mk('b', '', top);
+        var bar = mk('div', 'pbar', box), fill = mk('i', '', bar), meta = mk('div', 'meta', box), reward = mk('span', '', meta), btns = mk('div', 'btns', meta);
+        var claim = mk('button', 'btn primary', btns, 'Claim'), skip = mk('button', 'btn', btns, 'Skip');
+        claim.type = 'button'; skip.type = 'button';
+        claim.addEventListener('click', function () { claimContract(j); });
+        skip.addEventListener('click', function () { skipContract(j); });
+        contractEls.push({ box: box, title: title, tag: tag, fill: fill, reward: reward, claim: claim });
+      })(j);
+    }
+    MAST_KINDS.forEach(function (k) {
+      var box = mk('div', 'pitem', mb), top = mk('div', 'top', box), name = mk('span', '', top, MAST[k].name), lvl = mk('b', '', top);
+      var bar = mk('div', 'pbar', box), fill = mk('i', '', bar), meta = mk('div', 'meta', box), info = mk('span', '', meta);
+      masteryEls[k] = { lvl: lvl, fill: fill, info: info };
+    });
+    Object.keys(ZONES).forEach(function (k) {
+      var z = ZONES[k], box = mk('div', 'pitem', zb), top = mk('div', 'top', box), name = mk('span', '', top);
+      var chip = mk('span', 'chip', name); chip.style.background = z.color; mk('span', '', name, z.name);
+      mk('span', '', box, 'A drill whose head tile is on this patch: ' + z.note + '.');
+    });
+  })();
+  function updateProgress() {
+    contractPoll(); ensureContracts();
+    var j, done = 0;
+    for (j = 0; j < CONTRACT_SLOTS; j++) {
+      var c = st.contracts[j], e = contractEls[j], ok = c.p >= c.n;
+      if (ok) done++;
+      e.title.textContent = contractText(c);
+      e.tag.textContent = c.hard ? 'HARD' : '';
+      e.fill.style.width = Math.round(100 * Math.min(1, c.p / c.n)) + '%';
+      e.reward.textContent = fmt(Math.floor(c.p)) + ' / ' + fmt(c.n) + ' · reward: ' + contractReward(c);
+      e.claim.disabled = !ok;
+      e.box.classList.toggle('done', ok);
+    }
+    document.getElementById('contractsSub').textContent = done ? done + ' ready to claim' : st.contractsDone + ' done';
+    var total = 0;
+    MAST_KINDS.forEach(function (k) {
+      var L = mastLvl[k], n = st.mast[k], prev = mastNeed(L), nxt = mastNext[k], e = masteryEls[k];
+      total += L;
+      e.lvl.textContent = L >= MAST_MAX ? 'MAX' : 'Lv ' + L;
+      e.fill.style.width = (L >= MAST_MAX ? 100 : Math.round(100 * (n - prev) / (nxt - prev))) + '%';
+      e.info.textContent = (L >= MAST_MAX ? fmt(n) : fmt(n) + ' / ' + fmt(nxt)) + ' ' + MAST[k].unit + ' · +' + Math.round(MAST_BONUS * L * 100) + '% ' + MAST[k].what;
+    });
+    document.getElementById('masterySub').textContent = 'total level ' + total;
+  }
   function updateSurgeBanner() {
     var txt = '';
-    if (st.surge > 0) { var sec = Math.ceil(st.surge); txt = '⚡ POWER SURGE: coal gives half energy · ' + Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); }
+    if (st.surge > 0) { var sec = Math.ceil(st.surge), tm = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2); txt = narrowScreen() ? '⚡ SURGE ' + tm : '⚡ POWER SURGE: coal gives half energy · ' + tm; }
     if (txt === surgeShown) return;
     surgeShown = txt; elSurge.hidden = !txt; elSurge.textContent = txt;
   }
@@ -1885,7 +2284,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
     if (incT >= 0.5) { inc = inc * 0.8 + (earnedAcc / incT) * 0.2; earnedAcc = 0; incT = 0; }
     if (themeT >= 1) { themeT = 0; readTheme(); }
     if (saveT >= 5) { saveT = 0; save(); }
-    if (uiT >= 0.12) updateSurgeBanner();
+    if (uiT >= 0.12) { updateSurgeBanner(); updateSiteUI(); updateProgress(); }
     if (uiT < 0.12) return;
     uiT = 0;
     elCash.textContent = '$' + fmt(Math.floor(st.cash));
