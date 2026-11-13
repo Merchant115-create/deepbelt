@@ -622,7 +622,9 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     fur11: 320, fur12: 380, fur13: 450, fur14: 540, fur15: 650, fur16: 780, fur17: 940, fur18: 1100, fur19: 1350, fur20: 1700,
     asc_d4: 3500, asc_u4: 1200, asc_f4: 1200, asc_s2: 400, asc_d5: 6000, asc_u5: 2500, asc_f5: 2500, asc_d6: 12000, asc_u6: 5000, asc_f6: 5000
   };
-  ITEMS.forEach(function (d) { d.draw = DRAW[d.id] || 0; });
+  /* Ascended items use half the power their DRAW table entry says. Change ASC_DRAW_FACTOR to retune all of them at once. */
+  var ASC_DRAW_FACTOR = 0.5;
+  ITEMS.forEach(function (d) { d.draw = (DRAW[d.id] || 0) * (d.asc ? ASC_DRAW_FACTOR : 1); });
 
   /* Rarity is a label for how far up its line an item sits. It doesn't change how the item plays. */
   var RAR_LABEL = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', mythic: 'Mythic', divine: 'Divine', ascended: 'Ascended' };
@@ -1618,7 +1620,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
   }
   /* Ascended items cost nothing to buy, so their repair price comes from their power draw instead. */
   function repairCost(def) {
-    return Math.round(def.asc ? def.draw * 1e9 : Math.max(def.cost * 0.1, def.draw * 100));
+    return Math.round(def.asc ? def.draw / ASC_DRAW_FACTOR * 1e9 : Math.max(def.cost * 0.1, def.draw * 100));
   }
   function breakOne() {
     var pool = [];
