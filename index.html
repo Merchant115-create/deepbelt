@@ -90,6 +90,21 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #site { color: #c78bff; } }
 :root[data-theme="dark"] #site { color: #c78bff; }
 @media (max-width: 600px) { #surge, #site { font-size: 11px; padding: 2px 10px; border-width: 1px; } #banners { top: 6px; gap: 3px; } }
+.rc1 { --rc: var(--r-common); } .rc2 { --rc: var(--r-uncommon); } .rc3 { --rc: var(--r-rare); } .rc4 { --rc: var(--r-legendary); }
+.crate-odds { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--ink-2); }
+.reelvp { position: relative; overflow: hidden; height: 92px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.reelvp::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--accent); z-index: 2; box-shadow: 0 0 8px var(--accent); }
+.reel { position: relative; display: flex; gap: 6px; padding: 8px 0; will-change: transform; }
+.rcard { flex: none; width: 76px; height: 76px; border: 2px solid var(--rc, var(--line)); border-radius: 8px; background: var(--panel); display: flex; align-items: center; justify-content: center; }
+.rcard canvas { width: 60px; height: 60px; }
+.cres { font-weight: 600; min-height: 1.3em; font-size: 13px; color: var(--rc, var(--ink)); }
+.cgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; }
+.ccell { border: 2px solid var(--rc); border-radius: 6px; padding: 2px; background: var(--panel-2); opacity: 0.38; filter: grayscale(1); }
+.ccell.own { opacity: 1; filter: none; }
+.ccell canvas { width: 100%; height: auto; display: block; }
+.vrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--ink); }
+.vrow .btns { display: flex; gap: 6px; flex: none; }
+.vrow .btn { padding: 4px 10px; font-size: 12px; }
 .pitem .sitebar > i { background: #a03cff; }
 .pitem.met .sitebar > i { background: var(--good, #2f9e62); }
 #hint { flex: 1 1 200px; min-width: 0; color: var(--ink-2); font-size: 13px; }
@@ -98,6 +113,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .rebirth .line { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--ink-2); }
 .rebirth .line b { font: 600 13px var(--font-mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 .rebirth p, .foot p { margin: 0; font-size: 12px; color: var(--ink-2); }
+/* Author rules such as display:flex beat the browser's built-in [hidden], so hidden rows would still show. This makes hidden always win. */
+[hidden] { display: none !important; }
 details.prog { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
 details.prog > summary { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 12px; cursor: pointer; list-style: none; font: 600 12px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
 details.prog > summary::-webkit-details-marker { display: none; }
@@ -187,6 +204,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
         <button class="btn primary" id="btnRebirth" type="button">Rebirth</button>
         <p>You get 20 rebirths, and each one needs 10 times more than the last. Each also gives you one Ascended item and one new square to place it on. Rebirth clears your cash, floor and land. Each rebirth also gives you exactly 1 core, which you can spend on Core tech below.</p>
       </div>
+      <details class="prog" id="crateBox"><summary>Core box <span class="sub" id="crateSub"></span></summary><div class="body" id="crateBody"></div></details>
       <details class="prog" id="siteBox" open hidden><summary>Extraction site <span class="sub" id="siteSub"></span></summary><div class="body" id="siteBody"></div></details>
       <details class="prog" id="contractsBox" open><summary>Contracts <span class="sub" id="contractsSub"></span></summary><div class="body" id="contractsBody"></div></details>
       <details class="prog" id="masteryBox"><summary>Mastery <span class="sub" id="masterySub"></span></summary><div class="body" id="masteryBody"></div></details>
@@ -209,7 +227,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
   var SAVE_KEY = 'deepbelt-save-v1';
   var PLOT = { x0: 7, x1: 13, y0: 5, y1: 7 };
   var START_TILES = (PLOT.x1 - PLOT.x0 + 1) * (PLOT.y1 - PLOT.y0 + 1);
-  var LAND_BASE = 500, LAND_GROWTH = 1.06;
+  var LAND_BASE = 500, LAND_GROWTH = 1.15;
   var REBIRTH_BASE = 500000000000000000, REBIRTH_GROWTH = 10, MAX_REBIRTHS = 20, BASE_CAP = 100, BREAK_AFTER = 8;
   /* Power surge event: each time your cash reaches a new money suffix (K, M, B, T...) there is a 1 in 20 chance of a surge,
      which halves the energy every coal ore gives for 5 minutes. Each suffix gets one roll per life. */
@@ -263,7 +281,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     }
   });
 
-  /* EXTRACTION SITE. One event per life. After a few minutes of play, glowing purple squares appear on empty land you own.
+  /* EXTRACTION SITE. One event per life. After a few minutes of play, glowing purple squares appear on land you own, and one that lands on a machine destroys the 3x3 around it.
      Each asks for a number of ore (any ore, or one effect, or one shape). Belt ore into the squares before the clock runs out.
      Fill them all and every sale pays double for 2 minutes. Run out of time and every machine breaks.
      More squares appear the later your life: 1 on life 1, plus 1 every 2 lives, up to 10. */
@@ -296,10 +314,24 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     for (var q = 0; q < N; q++) { var g = grid[q]; if (!g || !isHead(g, q) || g.broken) continue; if (g.def.kind === 'drill' && !g.def.coal) drills++; else if (g.def.kind === 'fur') furs++; }
     return drills > 0 && furs > 0;
   }
-  /* Pick empty owned tiles, preferring ones at least 3 apart so the squares do not clump. Returns false if there is no room. */
+  /* Wreck every machine touching the 3x3 block around a tile. Nothing is refunded. Ascended items go back to your stock
+     (their count comes from what stands on the floor), and unlocked core tech stays unlocked. */
+  function blastAround(i) {
+    var cx = i % COLS, cy = Math.floor(i / COLS), hit = [], x, y;
+    for (y = cy - 1; y <= cy + 1; y++) for (x = cx - 1; x <= cx + 1; x++) {
+      if (x < 0 || y < 0 || x >= COLS || y >= ROWS) continue;
+      var m = grid[x + y * COLS];
+      if (m && hit.indexOf(m) < 0) hit.push(m);
+    }
+    hit.forEach(clearMachine);
+    if (floaters.length < 22) floaters.push({ x: cx + 0.5, y: cy + 0.5, txt: 'DESTROYED', age: 0, bad: true });
+    return hit.length;
+  }
+  /* Squares land on ANY land you own, spaced at least 3 apart where there is room. A square that lands on a machine
+     destroys everything in the 3x3 around it. A crowded floor is more likely to be hit, so a tidy layout is a risk. */
   function startSite() {
-    var free = [], q, k;
-    for (q = 0; q < N; q++) if (owned[q] && !grid[q]) free.push(q);
+    var free = [], q, k, lost = 0, hits = 0;
+    for (q = 0; q < N; q++) if (owned[q]) free.push(q);
     if (!free.length) return false;
     for (k = free.length - 1; k > 0; k--) { var r = Math.floor(Math.random() * (k + 1)), tmp = free[k]; free[k] = free[r]; free[r] = tmp; }
     var want = Math.min(siteGridCount(st.rebirths + 1), free.length), pick = [];
@@ -307,6 +339,8 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
       if (pick.length < want && pick.every(function (p2) { return Math.abs(p2 % COLS - f % COLS) + Math.abs(Math.floor(p2 / COLS) - Math.floor(f / COLS)) >= 3; })) pick.push(f);
     });
     free.forEach(function (f) { if (pick.length < want && pick.indexOf(f) < 0) pick.push(f); });
+    /* Checked one at a time: an earlier blast may already have cleared a later square's tile. */
+    pick.forEach(function (i) { if (grid[i]) { lost += blastAround(i); hits++; } });
     /* The ask is a share of what your drills can make in the time allowed, split between the squares. A typed square is half as big,
        because only some of your ore will have that effect or shape. */
     var typed = siteTypes(), per = Math.max(30, oreRate(false) * SITE_SECONDS * SITE_SHARE) / pick.length;
@@ -315,7 +349,8 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
       return { i: i, t: t.t, k: t.k, n: Math.max(8, Math.round(per * (t.t === 'any' ? 1 : 0.5))), p: 0 };
     });
     st.site = { left: SITE_SECONDS, grids: grids }; st.siteDone = 1; siteSync();
-    note('EXTRACTION SITE! ' + grids.length + (grids.length > 1 ? ' purple squares have' : ' purple square has') + ' appeared. Belt ore into ' + (grids.length > 1 ? 'them' : 'it') + ' within 4 minutes.');
+    note('EXTRACTION SITE! ' + grids.length + (grids.length > 1 ? ' purple squares have' : ' purple square has') + ' appeared. Belt ore into ' + (grids.length > 1 ? 'them' : 'it') + ' within 4 minutes.' +
+      (lost ? ' ' + lost + ' machine' + (lost > 1 ? 's were' : ' was') + ' destroyed where ' + (hits > 1 ? 'squares' : 'a square') + ' landed.' : ''));
     return true;
   }
   /* An ore reaches a purple square. A matching ore counts. Anything else is lost, like ore sent into a wall. */
@@ -644,7 +679,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
   }
 
   /* ---------- state ---------- */
-  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [], surge: 0, tier: 0, mast: { drill: 0, up: 0, fur: 0, belt: 0, power: 0 }, contracts: [], contractCores: 0, contractsDone: 0, lifeT: 0, siteGo: 0, siteDone: 0, site: null, boom: 0 };
+  var st = { cash: 40, run: 0, total: 0, cores: 0, spent: 0, rebirths: 0, unlocked: {}, energy: BASE_CAP, inv: {}, asc: [], surge: 0, tier: 0, mast: { drill: 0, up: 0, fur: 0, belt: 0, power: 0 }, contracts: [], contractCores: 0, contractsDone: 0, lifeT: 0, siteGo: 0, siteDone: 0, site: null, boom: 0, dupes: {}, boxes: 0 };
   var capNow = BASE_CAP, effNow = 1, effRaw = 1, effS = 1, demandNow = 0, outage = 0, brokenCount = 0, weakCount = 0;
   /* How well a machine runs. Ordinary machines never drop below 30%. Ascended machines drop to 0. */
   function effOf(def) { return def.draw ? (def.asc ? effRaw : effNow) : 1; }
@@ -782,7 +817,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
       if (moving) moving.items.forEach(function (it) { cells.push([it.ox, it.oy, it.m.def.id, it.od, it.m.broken ? 1 : 0, it.m.weak ? 1 : 0]); });
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         cash: st.cash, run: st.run, total: st.total, cores: st.cores, spent: st.spent, rebirths: st.rebirths,
-        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, surge: st.surge, tier: st.tier, mast: st.mast, contracts: st.contracts, cc: st.contractCores, cd: st.contractsDone, lt: st.lifeT, sg: st.siteGo, sd: st.siteDone, site: st.site, boom: st.boom, land: land, cells: cells
+        unlocked: st.unlocked, energy: st.energy, inv: st.inv, asc: st.asc, surge: st.surge, tier: st.tier, mast: st.mast, contracts: st.contracts, cc: st.contractCores, cd: st.contractsDone, dupes: st.dupes, boxes: st.boxes, lt: st.lifeT, sg: st.siteGo, sd: st.siteDone, site: st.site, boom: st.boom, land: land, cells: cells
       }));
     } catch (e) {}
   }
@@ -808,6 +843,10 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
           (c.t === 'fx' ? !!FX[c.k] : c.t === 'sh' ? !!SHAPES[c.k] : c.t === 'have' ? ['fur', 'up', 'drill'].indexOf(c.k) >= 0 : true);
       }).slice(0, CONTRACT_SLOTS).map(function (c) { return { t: c.t, k: c.k, n: +c.n, p: Math.min(+c.p, +c.n), hard: !!c.hard }; }) : [];
       st.contractCores = Math.max(0, +d.cc | 0); st.contractsDone = Math.max(0, +d.cd | 0);
+      st.boxes = Math.max(0, +d.boxes | 0); st.dupes = {};
+      if (d.dupes && typeof d.dupes === 'object') ITEMS.forEach(function (it) {
+        var n = +d.dupes[it.id]; if (it.core && isFinite(n) && n >= 1) st.dupes[it.id] = Math.min(9999, Math.floor(n));
+      });
       st.lifeT = Math.max(0, +d.lt || 0); st.siteGo = Math.max(0, +d.sg || 0); st.siteDone = d.sd ? 1 : 0; st.boom = Math.max(0, Math.min(SITE_BOOM_SECONDS, +d.boom || 0));
       st.site = null;
       if (d.site && isFinite(+d.site.left) && +d.site.left > 0 && Array.isArray(d.site.grids)) {
@@ -2017,7 +2056,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
   function costText(d) {
     if (d.asc) return isLocked(d) ? 'Rebirth ' + d.grant : available(d.id) + ' left';
     if (capped(d)) return 'Max ' + MAX_UP + '/' + MAX_UP;
-    return isLocked(d) ? d.core + (d.core === 1 ? ' core' : ' cores') : '$' + fmt(d.cost);
+    return isLocked(d) ? 'Core box' : '$' + fmt(d.cost);
   }
 
   function makeRow(d) {
@@ -2085,22 +2124,16 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
         drawBig(c, d, 0, 4 + (80 - w * ts) / 2 - b.x0 * ts, 4 + (80 - h * ts) / 2 - b.y0 * ts, ts, 0, 0);
       } else drawItem(c, d, 0, 4, 4, 80, 0, 0);
     });
+    paintCrateIcons();
   }
 
   function onRow(d) {
     if (d.asc && isLocked(d)) { note(d.name + ' is the reward for rebirth ' + d.grant + '.'); return; }
+    /* Core tech can no longer be bought directly. The only way to unlock it is a Core box, so a locked row just points there. */
     if (isLocked(d)) {
-      if (spendable() < d.core) { note(d.name + ' needs ' + d.core + ' cores. You have ' + spendable() + ' to spend. Rebirth to earn more.'); return; }
-      if (armed === d.id) {
-        clearTimeout(armTimer); armed = null;
-        st.spent += d.core; st.unlocked[d.id] = true;
-        save(); selectItem(d);
-        note('Unlocked ' + d.name + '. It now stays unlocked through every rebirth.');
-        return;
-      }
-      armed = d.id; clearTimeout(armTimer);
-      armTimer = setTimeout(function () { armed = null; updateHint(); }, 4000);
-      note('Click ' + d.name + ' again to spend ' + d.core + (d.core === 1 ? ' core' : ' cores') + ' and unlock it for good.');
+      note(d.name + ' can only be won from a Core box (' + CRATE_COST + ' cores each). Opening the Core box panel.');
+      var cb = document.getElementById('crateBox'); cb.open = true;
+      if (cb.scrollIntoView) cb.scrollIntoView({ block: 'nearest' });
       return;
     }
     selectItem(selected === d ? null : d);
@@ -2177,7 +2210,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     if (reward) note('Rebirth reward: ' + reward.name + ', plus a new glowing square to place it on.');
   });
   twoStep(btnReset, function () { return 'Reset save'; }, 'Press again to erase everything', function () {
-    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.energy = BASE_CAP; st.inv = {}; st.asc = []; st.surge = 0; st.tier = 0; st.contracts = []; st.contractCores = 0; st.contractsDone = 0; siteReset(); MAST_KINDS.forEach(function (k) { st.mast[k] = 0; }); mastRefresh(false);
+    st.cash = 40; st.run = 0; st.total = 0; st.cores = 0; st.spent = 0; st.rebirths = 0; st.unlocked = {}; st.dupes = {}; st.boxes = 0; st.energy = BASE_CAP; st.inv = {}; st.asc = []; st.surge = 0; st.tier = 0; st.contracts = []; st.contractCores = 0; st.contractsDone = 0; siteReset(); MAST_KINDS.forEach(function (k) { st.mast[k] = 0; }); mastRefresh(false);
     if (selected && (selected.core || selected.asc)) selectItem(null);
     resetFloor(); save();
   });
@@ -2203,7 +2236,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     elSiteBox.hidden = !on;
     if (!on) return;
     if (!siteInfo) {
-      siteInfo = mk('div', '', elSiteBody, 'Belt ore into the purple squares before time runs out. Fill them all: every sale pays \u00d7' + SITE_BOOM + ' for 2 minutes. Fail: every machine breaks. Wrong ore sent in is lost.');
+      siteInfo = mk('div', '', elSiteBody, 'Belt ore into the purple squares before time runs out. Fill them all: every sale pays \u00d7' + SITE_BOOM + ' for 2 minutes. Fail: every machine breaks. Wrong ore sent in is lost. A square that lands on a machine destroys everything in the 3\u00d73 around it.');
       /* One row per possible square, built once. Rows beyond the current count are simply hidden. */
       for (var r = 0; r < SITE_MAX_GRIDS; r++) {
         var box = mk('div', 'pitem', elSiteBody), top = mk('div', 'top', box), title = mk('span', '', top), cnt = mk('b', '', top);
@@ -2219,6 +2252,144 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
       e.fill.style.width = Math.round(100 * Math.min(1, g.p / g.n)) + '%';
       e.where.textContent = 'Square at column ' + (g.i % COLS + 1) + ', row ' + (Math.floor(g.i / COLS) + 1);
       e.box.classList.toggle('met', g.p >= g.n);
+    });
+  }
+
+  /* CORE BOX. Spend cores on a random Core tech item, like a crate. The tier of the item sets how rare it is.
+     A new item unlocks for good. A duplicate goes to your vault and can be sold back for its full core price.
+     The box costs more than the average duplicate sells for, so opening boxes you do not need always loses a little. */
+  var CRATE_COST = 2;
+  var CRATE_TIERS = [{ tier: 1, name: 'Common', weight: 60 }, { tier: 2, name: 'Uncommon', weight: 28 }, { tier: 3, name: 'Rare', weight: 9 }, { tier: 4, name: 'Legendary', weight: 3 }];
+  function crateItems(tier) { return ITEMS.filter(function (d) { return d.core === tier; }); }
+  function crateTotals() {
+    var live = CRATE_TIERS.filter(function (t) { return crateItems(t.tier).length; }), sum = 0;
+    live.forEach(function (t) { sum += t.weight; });
+    return { live: live, sum: sum };
+  }
+  /* Pick a tier by weight, then an item in it at random. `rnd` is injectable so tests can force a result. */
+  function crateRoll(rnd) {
+    rnd = rnd || Math.random;
+    var t = crateTotals(), x = rnd() * t.sum, pick = t.live[t.live.length - 1];
+    for (var i = 0; i < t.live.length; i++) { if (x < t.live[i].weight) { pick = t.live[i]; break; } x -= t.live[i].weight; }
+    var list = crateItems(pick.tier);
+    return list[Math.min(list.length - 1, Math.floor(rnd() * list.length))];
+  }
+  /* The result is decided and saved the moment you pay. The reel is only the reveal, so closing the page mid-spin loses nothing. */
+  function crateOpen(rnd) {
+    if (spendable() < CRATE_COST) { note('A core box costs ' + CRATE_COST + ' cores. You have ' + spendable() + ' to spend.'); return null; }
+    st.spent += CRATE_COST; st.boxes++;
+    var d = crateRoll(rnd), dupe = !!st.unlocked[d.id];
+    if (dupe) st.dupes[d.id] = (st.dupes[d.id] || 0) + 1; else st.unlocked[d.id] = true;
+    save();
+    return { d: d, dupe: dupe };
+  }
+  function crateDupeCount() { var n = 0; for (var k in st.dupes) n += st.dupes[k]; return n; }
+  function crateDupeValue() { var v = 0; ITEMS.forEach(function (d) { if (d.core && st.dupes[d.id]) v += st.dupes[d.id] * d.core; }); return v; }
+  /* Sell `count` duplicates of one item (default all of them). Returns the cores gained. */
+  function crateSell(id, count) {
+    var d = BY_ID[id], have = st.dupes[id] || 0;
+    if (!d || !d.core || have < 1) return 0;
+    var n = Math.max(1, Math.min(have, count == null ? have : Math.floor(count)));
+    if (have - n > 0) st.dupes[id] = have - n; else delete st.dupes[id];
+    var gain = n * d.core; st.cores += gain; save();
+    note('Sold ' + n + ' × ' + d.name + ' for ' + gain + (gain === 1 ? ' core.' : ' cores.'));
+    return gain;
+  }
+  function crateSellAll() {
+    var gain = 0, n = crateDupeCount(); if (!n) return 0;
+    ITEMS.forEach(function (d) { if (d.core && st.dupes[d.id]) gain += st.dupes[d.id] * d.core; });
+    st.dupes = {}; st.cores += gain; save();
+    note('Sold ' + n + ' duplicate' + (n > 1 ? 's' : '') + ' for ' + gain + (gain === 1 ? ' core.' : ' cores.'));
+    return gain;
+  }
+  var crateSpinning = false, crateReady = false, crateEls = { cells: {}, vault: {} };
+  function tierOf(d) { return d.core; }
+  function paintCrateIcons() {
+    if (!crateReady) return;
+    /* Only the permanent collection cells are repainted (theme change, fonts loaded). Reel cards are rebuilt every spin. */
+    ITEMS.forEach(function (d) {
+      var cell = crateEls.cells[d.id], src = iconCanvases[d.id]; if (!cell || !src) return;
+      var c = cell.iconCanvas.getContext('2d'); c.clearRect(0, 0, 88, 88); c.drawImage(src, 0, 0);
+    });
+  }
+  function iconCard(parent, d, cls) {
+    var box = mk('div', cls + ' rc' + tierOf(d), parent), cv = mk('canvas', '', box);
+    cv.width = 88; cv.height = 88;
+    var src = iconCanvases[d.id]; if (src) cv.getContext('2d').drawImage(src, 0, 0);
+    box.iconCanvas = cv;
+    return box;
+  }
+  function buildCrate() {
+    var body = document.getElementById('crateBody'), t = crateTotals();
+    mk('div', '', body, 'Core tech can only be unlocked here. Spend ' + CRATE_COST + ' cores for a random Core tech item. New items unlock for good. Duplicates go to your vault and sell back for their full core price.');
+    var odds = mk('div', 'crate-odds', body);
+    t.live.forEach(function (tr) {
+      var row = mk('div', '', odds), chip = mk('span', 'chip rc' + tr.tier, row); chip.style.background = 'var(--rc)';
+      mk('span', '', row, tr.name + ' · ' + (Math.round(1000 * tr.weight / t.sum) / 10) + '% · ' + crateItems(tr.tier).length + (crateItems(tr.tier).length === 1 ? ' item' : ' items') + ' · sells for ' + tr.tier + (tr.tier === 1 ? ' core' : ' cores'));
+    });
+    crateEls.vp = mk('div', 'reelvp', body); crateEls.vp.hidden = true; crateEls.reel = mk('div', 'reel', crateEls.vp);
+    crateEls.res = mk('div', 'cres', body);
+    crateEls.open = mk('button', 'btn primary', body, 'Open box · ' + CRATE_COST + ' cores'); crateEls.open.type = 'button';
+    crateEls.open.addEventListener('click', crateClick);
+    mk('div', '', body, 'Collection');
+    var grid = mk('div', 'cgrid', body);
+    ITEMS.filter(function (d) { return d.core; }).sort(function (a, b) { return a.core - b.core; }).forEach(function (d) {
+      var cell = iconCard(grid, d, 'ccell'); cell.title = d.name + ' · ' + CRATE_TIERS[d.core - 1].name; crateEls.cells[d.id] = cell;
+    });
+    crateEls.vaultHead = mk('div', 'top', body); crateEls.vaultHead.style.fontWeight = '600'; crateEls.vaultHead.textContent = 'Vault (duplicates)';
+    crateEls.vaultList = mk('div', '', body); crateEls.vaultList.style.display = 'flex'; crateEls.vaultList.style.flexDirection = 'column'; crateEls.vaultList.style.gap = '6px';
+    ITEMS.filter(function (d) { return d.core; }).forEach(function (d) {
+      var row = mk('div', 'vrow', crateEls.vaultList), nm = mk('span', '', row), btns = mk('div', 'btns', row);
+      var one = mk('button', 'btn', btns), all = mk('button', 'btn', btns);
+      one.type = 'button'; all.type = 'button';
+      one.addEventListener('click', function () { crateSell(d.id, 1); updateCrateUI(); });
+      all.addEventListener('click', function () { crateSell(d.id); updateCrateUI(); });
+      crateEls.vault[d.id] = { row: row, nm: nm, one: one, all: all };
+    });
+    crateEls.sellAll = mk('button', 'btn', body); crateEls.sellAll.type = 'button';
+    crateEls.sellAll.addEventListener('click', function () { crateSellAll(); updateCrateUI(); });
+    crateReady = true;
+  }
+  function updateCrateUI() {
+    if (!crateReady) return;
+    var owned = 0, total = 0, dn = crateDupeCount();
+    ITEMS.forEach(function (d) { if (!d.core) return; total++; var own = !!st.unlocked[d.id]; if (own) owned++; crateEls.cells[d.id].classList.toggle('own', own); });
+    document.getElementById('crateSub').textContent = owned + '/' + total + ' unlocked' + (dn ? ' · ' + dn + ' dupes' : '');
+    crateEls.open.disabled = crateSpinning || spendable() < CRATE_COST;
+    ITEMS.forEach(function (d) {
+      if (!d.core) return;
+      var v = crateEls.vault[d.id], n = st.dupes[d.id] || 0;
+      v.row.hidden = !n; if (!n) return;
+      v.nm.textContent = d.name + ' ×' + n;
+      v.one.textContent = 'Sell 1 (+' + d.core + ')'; v.all.textContent = n > 1 ? 'Sell all (+' + n * d.core + ')' : '';
+      v.all.hidden = n < 2;
+    });
+    crateEls.vaultHead.hidden = !dn; crateEls.sellAll.hidden = dn < 2;
+    if (dn > 1) crateEls.sellAll.textContent = 'Sell all duplicates · +' + crateDupeValue() + ' cores';
+  }
+  /* The reveal. A strip of random cards slides left and decelerates until the winning card sits under the marker. */
+  function spinReel(win, done) {
+    var strip = crateEls.reel, vp = crateEls.vp, WIN = 36, TOTAL = 44, i, winCard = null;
+    while (strip.firstChild) strip.removeChild(strip.firstChild);
+    for (i = 0; i < TOTAL; i++) { var it = i === WIN ? win : crateRoll(), card = iconCard(strip, it, 'rcard'); if (i === WIN) winCard = card; }
+    vp.hidden = false;
+    strip.style.transition = 'none'; strip.style.transform = 'translateX(0px)';
+    void strip.offsetWidth;
+    var target = winCard.offsetLeft + winCard.offsetWidth / 2 - vp.clientWidth / 2 + (Math.random() - 0.5) * winCard.offsetWidth * 0.6;
+    if (reduce) { strip.style.transform = 'translateX(' + (-target) + 'px)'; done(); return; }
+    strip.style.transition = 'transform 5s cubic-bezier(0.12, 0.7, 0.12, 1)';
+    strip.style.transform = 'translateX(' + (-target) + 'px)';
+    setTimeout(done, 5100);
+  }
+  function crateClick() {
+    if (crateSpinning) return;
+    var r = crateOpen(); if (!r) return;
+    crateSpinning = true; crateEls.res.textContent = ''; crateEls.res.className = 'cres'; updateCrateUI();
+    spinReel(r.d, function () {
+      crateSpinning = false;
+      crateEls.res.className = 'cres rc' + r.d.core;
+      crateEls.res.textContent = r.dupe ? 'Duplicate: ' + r.d.name + '. Added to your vault (sells for ' + r.d.core + (r.d.core === 1 ? ' core).' : ' cores).') : 'NEW: ' + r.d.name + ' unlocked for good!';
+      note(crateEls.res.textContent); updateCrateUI();
     });
   }
 
@@ -2284,7 +2455,7 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
     if (incT >= 0.5) { inc = inc * 0.8 + (earnedAcc / incT) * 0.2; earnedAcc = 0; incT = 0; }
     if (themeT >= 1) { themeT = 0; readTheme(); }
     if (saveT >= 5) { saveT = 0; save(); }
-    if (uiT >= 0.12) { updateSurgeBanner(); updateSiteUI(); updateProgress(); }
+    if (uiT >= 0.12) { updateSurgeBanner(); updateSiteUI(); updateProgress(); updateCrateUI(); }
     if (uiT < 0.12) return;
     uiT = 0;
     elCash.textContent = '$' + fmt(Math.floor(st.cash));
@@ -2309,13 +2480,13 @@ details.prog .body { padding: 0 12px 12px; display: flex; flex-direction: column
       var locked = isLocked(d);
       costEls[d.id].textContent = costText(d);
       costEls[d.id].classList.toggle('locked', locked);
-      var poor = d.asc ? (locked || available(d.id) < 1) : locked ? spendable() < d.core : (st.cash < d.cost || capped(d));
+      var poor = d.asc ? (locked || available(d.id) < 1) : locked ? true : (st.cash < d.cost || capped(d));
       rows[d.id].classList.toggle('poor', poor);
     });
   }
 
   /* ---------- boot ---------- */
-  buildShop();
+  buildShop(); buildCrate();
   if (!load()) { resetLand(); starter(); }
   readTheme();
   resize();
